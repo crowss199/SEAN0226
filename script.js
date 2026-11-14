@@ -13,30 +13,10 @@ function openCart(){$("cart-drawer").classList.add("open");$("overlay").classLis
 $("open-cart").onclick=openCart;$("close-cart").onclick=closeCart;$("overlay").onclick=closeCart;
 $("menu-toggle").onclick=()=>{let n=$("main-nav").classList.toggle("open");$("menu-toggle").setAttribute("aria-expanded",String(n))};$("main-nav").onclick=e=>{if(e.target.closest("a"))$("main-nav").classList.remove("open")};
 document.querySelectorAll("[data-category]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-category]").forEach(x=>x.classList.toggle("active",x===b));renderProducts()});$("product-search").oninput=renderProducts;$("year").textContent=new Date().getFullYear();loadProducts();
-function cartSubtotal(){return cart.reduce((sum,x)=>sum+x.qty*Number(PRODUCTS.find(p=>p.id===x.id)?.price||0),0)}
-function updateGrandTotal(){const fee=Number(document.querySelector('[name="shippingFee"]')?.value||0);const el=$("checkout-grand-total");if(el)el.textContent=money(cartSubtotal()+fee)}
-$("checkout-open").onclick=()=>{if(!cart.length){$("checkout-status").textContent="請先加入商品再結帳。";return}$("checkout-form").hidden=false;updateGrandTotal();$("checkout-form").scrollIntoView({behavior:"smooth",block:"nearest"})};
-document.querySelector('[name="shippingFee"]').addEventListener("input",updateGrandTotal);
-$("checkout-form").addEventListener("submit",async e=>{
- e.preventDefault();if(!cart.length)return;
- const endpoint=window.CHECKOUT_CONFIG?.WEB_APP_URL||"";
- if(!endpoint||endpoint.includes("請填入")){$("checkout-status").textContent="尚未設定 Google 試算表接收網址，請先完成 README 設定。";return}
- const f=new FormData(e.currentTarget),fee=Number(f.get("shippingFee")),subtotal=cartSubtotal();
- if(subtotal+fee<55||subtotal+fee>20000){$("checkout-status").textContent="商品金額加運費需介於 55 至 20,000 元。";return}
- const items=cart.map(x=>{const p=PRODUCTS.find(p=>p.id===x.id);return{name:p.name,quantity:x.qty,unitPrice:Number(p.price),amount:Number(p.price)*x.qty}});
- const order={orderId:"XAFW"+Date.now(),createdAt:new Date().toISOString(),recipient:String(f.get("recipient")).trim(),phone:String(f.get("phone")).trim(),storeId:String(f.get("storeId")).trim(),storeName:String(f.get("storeName")||"").trim(),storeAddress:String(f.get("storeAddress")||"").trim(),temperature:f.get("temperature"),items,productAmount:subtotal,shippingFee:fee,totalAmount:subtotal+fee,note:String(f.get("note")||""),social:String(f.get("social")||"")};
- const btn=$("checkout-submit");btn.disabled=true;btn.textContent="送出中…";$("checkout-status").textContent="正在送出訂單…";
- try{await fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(order)});$("checkout-status").textContent="已送出訂單請求，請保留編號："+order.orderId+"；店家會核對試算表。";cart=[];persist();e.currentTarget.reset();updateGrandTotal()}
- catch(err){$("checkout-status").textContent="送出失敗，請稍後再試。"}
- finally{btn.disabled=false;btn.textContent="確認送出訂單"}
-});
-
-// 7-ELEVEN official store map: open separately; user copies the selected store ID back.
-$("open-store-map").addEventListener("click",()=>{
- window.open("https://emap.pcsc.com.tw/","_blank","noopener");
-});
-$("store-id").addEventListener("input",e=>{
- e.target.value=e.target.value.replace(/\D/g,"").slice(0,6);
+// Checkout now lives on a dedicated page.
+$("checkout-open").addEventListener("click",()=>{
+ if(!cart.length){alert("請先加入商品再結帳。");return}
+ location.href="checkout.html";
 });
 
 // Load editable store notice from announcement.json

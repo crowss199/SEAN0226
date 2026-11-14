@@ -91,3 +91,12 @@ https://emap.pcsc.com.tw/
 - 商品圖片：管理頁新增／修改商品時，可直接選擇圖片檔；圖片會嵌入 `products.json`。建議單張 1 MB 以下，系統上限 1.5 MB。上傳商品後按「下載更新檔」，再將 `products.json` 上傳 GitHub。
 - 官網商標：管理頁「官網商標上傳」選擇圖片，按「下載 site-settings.json」，再將該檔上傳 GitHub 根目錄。官網頁首及頁尾會套用商標。
 - 支援 PNG、JPG、WEBP、GIF。圖片資料會轉成 Base64 放在 JSON 檔，檔案可能變大；建議先縮圖、壓縮。
+
+
+## 獨立結帳頁更新
+本版本已改為三段式流程：
+1. 首頁購物車按「前往結帳」會開啟 `checkout.html`。
+2. 填寫資料並送出後會前往 `order-success.html`。
+3. 訂單送出請求後，仍須到 Google 試算表「官網訂單」確認是否實際收到。
+
+請將 ZIP 解壓縮後的全部檔案上傳至 GitHub Repository 根目錄，並覆蓋同名檔案。新增檔案包括 `checkout.html`、`checkout.js`、`checkout-page.css`、`order-success.html`、`success.js`。

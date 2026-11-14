@@ -39,24 +39,5 @@
 <div class="overlay" id="overlay"></div><aside class="cart-drawer" id="cart-drawer"><div class="drawer-header"><div><p class="eyebrow">YOUR SHORTLIST</p><h2>選購清單</h2></div><button id="close-cart" class="icon-button">×</button></div><div class="cart-items" id="cart-items"></div><div class="cart-bottom">
 <div class="total-row"><span>商品小計</span><strong id="cart-total">NT$ 0</strong></div>
 <button class="checkout-open" id="checkout-open" type="button">前往結帳</button>
-<p class="small-note">填寫取件資料後送出訂單，店家會在試算表收到訂單。</p>
-<form id="checkout-form" class="checkout-form" hidden>
-<h3>訂單與取件資料</h3>
-<label>取件人姓名（2–10字）<input name="recipient" required minlength="2" maxlength="10" autocomplete="name"></label>
-<label>取件人手機（10碼）<input name="phone" required inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel"></label>
-<div class="store-picker-field">
- <label>取件門市店號（6碼）<input name="storeId" id="store-id" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="查詢後輸入6碼店號"></label>
- <button type="button" class="store-map-button" id="open-store-map">查詢 7-ELEVEN 門市</button>
- <p class="store-hint">開啟官方電子地圖查詢門市，記下六碼店號後回到此頁填入。</p>
- <label>門市名稱（選填）<input name="storeName" id="store-name" maxlength="50" placeholder="請依官方地圖資料填寫"></label>
- <label>門市地址（選填）<input name="storeAddress" id="store-address" maxlength="120" placeholder="請依官方地圖資料填寫"></label>
-</div>
-<label>配送溫層<select name="temperature"><option value="常溫">常溫</option><option value="冷凍">冷凍</option></select></label>
-<label>運費金額（元）<input name="shippingFee" type="number" min="0" max="100" value="60" required></label>
-<label>商品備註<textarea name="note" maxlength="200" rows="2"></textarea></label>
-<label>其他資訊（FB／LINE／IG，可不填）<input name="social" maxlength="200"></label>
-<p class="checkout-total">應付代收金額：<strong id="checkout-grand-total">NT$ 0</strong></p>
-<button class="checkout-submit" id="checkout-submit" type="submit">確認送出訂單</button>
-<p class="checkout-status" id="checkout-status" role="status"></p>
-</form></div></aside>
+<p class="small-note">前往獨立結帳頁填寫收件與取件資料。</p></div></aside>
 <script src="checkout-config.js"></script><script src="script.js"></script></body></html>
