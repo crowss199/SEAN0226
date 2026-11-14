@@ -8,7 +8,14 @@
     "symbol": "UNI",
     "image": "",
     "url": "",
-    "category": "writing"
+    "category": "writing",
+    "productCode": "P0001",
+    "variants": [
+      {
+        "name": "一般規格",
+        "stock": null
+      }
+    ]
   },
   {
     "id": 2,
@@ -19,7 +26,14 @@
     "symbol": "K",
     "image": "",
     "url": "",
-    "category": "writing"
+    "category": "writing",
+    "productCode": "P0002",
+    "variants": [
+      {
+        "name": "一般規格",
+        "stock": null
+      }
+    ]
   },
   {
     "id": 3,
@@ -30,18 +44,32 @@
     "symbol": "JET",
     "image": "",
     "url": "",
-    "category": "writing"
+    "category": "writing",
+    "productCode": "P0003",
+    "variants": [
+      {
+        "name": "一般規格",
+        "stock": null
+      }
+    ]
   },
   {
     "id": 4,
+    "productCode": "P0004",
     "name": "三菱 2.0mm 筆芯專用削鉛筆機",
-    "desc": "型號 DPS600｜實用配件",
     "price": 157,
-    "tag": "文具配件",
+    "tag": "三菱鉛筆",
+    "desc": "型號 DPS600｜實用配件",
     "symbol": "2.0",
-    "image": "",
-    "url": "",
-    "category": "accessory"
+    "image": "https://images.plurk.com/358VmWEauPy5kugAgdFp73.jpg",
+    "url": "#",
+    "category": "writing",
+    "variants": [
+      {
+        "name": "一般規格",
+        "stock": 10
+      }
+    ]
   },
   {
     "id": 5,
@@ -52,7 +80,14 @@
     "symbol": "PG",
     "image": "",
     "url": "",
-    "category": "writing"
+    "category": "writing",
+    "productCode": "P0005",
+    "variants": [
+      {
+        "name": "一般規格",
+        "stock": null
+      }
+    ]
   },
   {
     "id": 6,
@@ -63,6 +98,13 @@
     "symbol": "4+1",
     "image": "",
     "url": "",
-    "category": "writing"
+    "category": "writing",
+    "productCode": "P0006",
+    "variants": [
+      {
+        "name": "一般規格",
+        "stock": null
+      }
+    ]
   }
 ]
