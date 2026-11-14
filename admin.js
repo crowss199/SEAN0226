@@ -73,6 +73,13 @@ $("variant-rows").addEventListener("click",e=>{
 });
 async function loadProducts(){try{let r=await fetch("./products.json",{cache:"no-store"});if(!r.ok)throw Error();products=(await r.json()).map(normalizeProduct);}catch{products=[];$("status").textContent="無法讀取 products.json；可按匯入按鈕載入商品資料。"}render()}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function downloadProducts(message="已下載 products.json，請上傳到 GitHub Repository 根目錄並覆蓋舊檔。"){
+ const blob=new Blob([JSON.stringify(products,null,2)],{type:"application/json"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download="products.json";document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ $("status").textContent=message;
+}
 function render(){
  $("count").textContent=`（${products.length} 件）`;
  $("product-list").innerHTML=products.length?products.map(p=>`<div class="product-row"><div><strong>${esc(p.productCode)}｜${esc(p.name)}</strong><small>NT$ ${Number(p.price).toLocaleString("zh-TW")}　${esc(p.desc||"")}<br>${p.variants.map(v=>`${esc(v.name)}：${v.stock===null?"未設定":v.stock+" 件"}`).join("　／　")}</small></div><div class="row-actions"><button class="light" data-edit="${p.id}">修改</button><button class="delete" data-delete="${p.id}">刪除</button></div></div>`).join(""):'<p class="hint">目前沒有商品，請使用上方表單新增。</p>';
@@ -92,7 +99,7 @@ $("product-form").addEventListener("submit",e=>{
  const p={id,productCode,name:$("name").value.trim(),price:Number($("price").value),tag:$("tag").value.trim(),desc:$("desc").value.trim(),symbol:$("symbol").value.trim()||"文具",image:$("image").value.trim(),url:$("url").value.trim()||"#",category:"writing",variants};
  if(!p.productCode||!p.name||!Number.isFinite(p.price)||p.price<0){$("status").textContent="請確認商品編號、名稱與價格。";return}
  let i=products.findIndex(x=>Number(x.id)===id);i>=0?products[i]=p:products.push(p);
- $("status").textContent="商品已更新目前清單；請記得下載更新檔。";reset();render();
+ reset();render();downloadProducts("商品已儲存並下載 products.json。請將此檔案上傳 GitHub 根目錄並覆蓋舊檔，官網才會更新。");
 });
 $("product-list").addEventListener("click",e=>{
  let eb=e.target.closest("[data-edit]"),db=e.target.closest("[data-delete]");
@@ -105,16 +112,12 @@ $("product-list").addEventListener("click",e=>{
  if(db){
   let id=Number(db.dataset.delete),p=products.find(x=>Number(x.id)===id);
   if(p&&confirm(`確定刪除「${p.productCode}｜${p.name}」？刪除後請下載 products.json 並上傳 GitHub 才會正式移除。`)){
-   products=products.filter(p=>Number(p.id)!==id);if(Number($("edit-id").value)===id)reset();render();$("status").textContent="商品已刪除；請記得下載更新檔並上傳 GitHub。";
+   products=products.filter(p=>Number(p.id)!==id);if(Number($("edit-id").value)===id)reset();render();downloadProducts("商品已刪除並下載 products.json。請將此檔案上傳 GitHub 根目錄並覆蓋舊檔，官網才會更新。");
   }
  }
 });
 $("cancel-edit").onclick=reset;
-$("download-btn").onclick=()=>{
- let blob=new Blob([JSON.stringify(products,null,2)],{type:"application/json"}),a=document.createElement("a");
- a.href=URL.createObjectURL(blob);a.download="products.json";a.click();URL.revokeObjectURL(a.href);
- $("status").textContent="已下載 products.json，請上傳到 GitHub Repository 根目錄並覆蓋舊檔。";
-};
+$("download-btn").onclick=()=>downloadProducts();
 $("import-btn").onclick=()=>$("import-file").click();
 $("import-file").onchange=async e=>{
  let f=e.target.files[0];if(!f)return;

@@ -15,7 +15,7 @@ function doPost(e){
   const sh=SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   const ids=sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,1).getDisplayValues().flat():[];
   if(ids.includes(String(d.orderId)))throw Error("重複訂單");
-  const goods=d.items.map(i=>`${i.name} x${i.quantity}`).join("；");
+  const goods=d.items.map(i=>`${i.name}x${i.quantity}`).join("");
   sh.appendRow([String(d.orderId),new Date(d.createdAt||Date.now()),String(d.recipient),String(d.phone),String(d.storeId),String(d.storeName||""),String(d.storeAddress||""),String(d.temperature),goods,Number(d.productAmount),Number(d.shippingFee),String(d.note||""),String(d.social||""),"新訂單"]);
   return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
  }catch(err){return ContentService.createTextOutput(JSON.stringify({ok:false,error:String(err)})).setMimeType(ContentService.MimeType.JSON)}
