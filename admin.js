@@ -52,15 +52,77 @@ $("toggle-password").addEventListener("click",()=>{
  button.textContent=visible?"顯示":"隱藏";
 });
 $("logout").addEventListener("click",logout);
-const fields=["name","price","tag","desc","symbol","image","url"];
-async function loadProducts(){try{let r=await fetch("./products.json");if(!r.ok)throw Error();products=await r.json();}catch{products=[];$("status").textContent="無法讀取 products.json；可按匯入按鈕載入商品資料。"}render()}
+const fields=["productCode","name","price","tag","desc","symbol","image","url"];
+function normalizeProduct(p){
+ const variants=Array.isArray(p.variants)&&p.variants.length?p.variants:[{name:"一般規格",stock:null}];
+ return {...p,productCode:String(p.productCode||p.code||("P"+String(p.id).padStart(4,"0"))),variants:variants.map((v,i)=>({name:String(v.name||("規格"+(i+1))),stock:v.stock===null||v.stock===undefined?null:Math.max(0,Number(v.stock)||0)}))};
+}
+function variantRows(list=[{name:"一般規格",stock:0}]){
+ $("variant-rows").innerHTML=list.map((v,i)=>`<div class="variant-row"><label>規格名稱<input class="variant-name" maxlength="60" required value="${esc(v.name)}" placeholder="例如：0.5mm 黑色"></label><label>庫存數量<input class="variant-stock" type="number" min="0" step="1" required value="${v.stock===null?0:Number(v.stock)}"></label><button type="button" class="delete remove-variant" aria-label="刪除此規格" ${list.length===1?"disabled":""}>刪除</button></div>`).join("");
+}
+$("add-variant").addEventListener("click",()=>{
+ const list=[...$("variant-rows").querySelectorAll(".variant-row")].map(r=>({name:r.querySelector(".variant-name").value,stock:Number(r.querySelector(".variant-stock").value)||0}));
+ list.push({name:"",stock:0});variantRows(list);
+});
+$("variant-rows").addEventListener("click",e=>{
+ if(!e.target.closest(".remove-variant"))return;
+ const rows=[...$("variant-rows").querySelectorAll(".variant-row")];
+ if(rows.length<=1)return;
+ const list=rows.filter(r=>r!==e.target.closest(".variant-row")).map(r=>({name:r.querySelector(".variant-name").value,stock:Number(r.querySelector(".variant-stock").value)||0}));
+ variantRows(list);
+});
+async function loadProducts(){try{let r=await fetch("./products.json",{cache:"no-store"});if(!r.ok)throw Error();products=(await r.json()).map(normalizeProduct);}catch{products=[];$("status").textContent="無法讀取 products.json；可按匯入按鈕載入商品資料。"}render()}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function render(){$("count").textContent=`（${products.length} 件）`;$ ("product-list").innerHTML=products.length?products.map(p=>`<div class="product-row"><div><strong>${esc(p.name)}</strong><small>NT$ ${Number(p.price).toLocaleString("zh-TW")}　${esc(p.desc||"")}</small></div><div class="row-actions"><button class="light" data-edit="${p.id}">修改</button><button class="delete" data-delete="${p.id}">刪除</button></div></div>`).join(""):'<p class="hint">目前沒有商品，請使用上方表單新增。</p>'}
-function reset(){$("product-form").reset();selectedProductImage="";$("image-preview").hidden=true;$("image-preview").innerHTML="";$("edit-id").value="";$("form-title").textContent="新增商品";$("submit-btn").textContent="＋ 加入商品清單";$("cancel-edit").hidden=true}
-$("product-form").addEventListener("submit",e=>{e.preventDefault();let id=Number($("edit-id").value)||Math.max(0,...products.map(p=>Number(p.id)||0))+1,p={id,name:$("name").value.trim(),price:Number($("price").value),tag:$("tag").value.trim(),desc:$("desc").value.trim(),symbol:$("symbol").value.trim()||"文具",image:$("image").value.trim(),url:$("url").value.trim()||"#",category:"writing"};if(!p.name||!Number.isFinite(p.price)||p.price<0){$("status").textContent="請確認商品名稱與價格。";return}let i=products.findIndex(x=>Number(x.id)===id);i>=0?products[i]=p:products.push(p);$("status").textContent="商品已更新目前清單；請記得下載更新檔。";reset();render()});
-$("product-list").addEventListener("click",e=>{let eb=e.target.closest("[data-edit]"),db=e.target.closest("[data-delete]");if(eb){let p=products.find(x=>Number(x.id)===Number(eb.dataset.edit));fields.forEach(k=>$(k).value=p[k]??"");$("edit-id").value=p.id;$("form-title").textContent="修改商品";$("submit-btn").textContent="儲存修改";$("cancel-edit").hidden=false;scrollTo({top:0,behavior:"smooth"})}if(db){let id=Number(db.dataset.delete);if(confirm("確定刪除此商品？")){products=products.filter(p=>Number(p.id)!==id);render();$("status").textContent="商品已刪除；請記得下載更新檔。"}}});
-$("cancel-edit").onclick=reset;$("download-btn").onclick=()=>{let blob=new Blob([JSON.stringify(products,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="products.json";a.click();URL.revokeObjectURL(a.href);$("status").textContent="已下載 products.json，請上傳到 GitHub Repository 根目錄並覆蓋舊檔。"};
-$("import-btn").onclick=()=>$("import-file").click();$("import-file").onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error();products=data;render();$("status").textContent="匯入成功。"}catch{$("status").textContent="匯入失敗，請選擇正確的 products.json。"}e.target.value=""};
+function render(){
+ $("count").textContent=`（${products.length} 件）`;
+ $("product-list").innerHTML=products.length?products.map(p=>`<div class="product-row"><div><strong>${esc(p.productCode)}｜${esc(p.name)}</strong><small>NT$ ${Number(p.price).toLocaleString("zh-TW")}　${esc(p.desc||"")}<br>${p.variants.map(v=>`${esc(v.name)}：${v.stock===null?"未設定":v.stock+" 件"}`).join("　／　")}</small></div><div class="row-actions"><button class="light" data-edit="${p.id}">修改</button><button class="delete" data-delete="${p.id}">刪除</button></div></div>`).join(""):'<p class="hint">目前沒有商品，請使用上方表單新增。</p>';
+}
+function reset(){
+ $("product-form").reset();selectedProductImage="";$("image-preview").hidden=true;$("image-preview").innerHTML="";
+ $("edit-id").value="";$("form-title").textContent="新增商品";$("submit-btn").textContent="＋ 加入商品清單";$("cancel-edit").hidden=true;
+ variantRows([{name:"一般規格",stock:0}]);
+}
+$("product-form").addEventListener("submit",e=>{
+ e.preventDefault();
+ const id=Number($("edit-id").value)||Math.max(0,...products.map(p=>Number(p.id)||0))+1;
+ const variants=[...$("variant-rows").querySelectorAll(".variant-row")].map(r=>({name:r.querySelector(".variant-name").value.trim(),stock:Number(r.querySelector(".variant-stock").value)}));
+ if(!variants.length||variants.some(v=>!v.name||!Number.isInteger(v.stock)||v.stock<0)){$("status").textContent="請填寫每個規格名稱及有效的庫存整數。";return}
+ const productCode=$("product-code").value.trim();
+ if(products.some(p=>p.productCode===productCode&&Number(p.id)!==id)){$("status").textContent="商品編號已存在，請使用不同編號。";return}
+ const p={id,productCode,name:$("name").value.trim(),price:Number($("price").value),tag:$("tag").value.trim(),desc:$("desc").value.trim(),symbol:$("symbol").value.trim()||"文具",image:$("image").value.trim(),url:$("url").value.trim()||"#",category:"writing",variants};
+ if(!p.productCode||!p.name||!Number.isFinite(p.price)||p.price<0){$("status").textContent="請確認商品編號、名稱與價格。";return}
+ let i=products.findIndex(x=>Number(x.id)===id);i>=0?products[i]=p:products.push(p);
+ $("status").textContent="商品已更新目前清單；請記得下載更新檔。";reset();render();
+});
+$("product-list").addEventListener("click",e=>{
+ let eb=e.target.closest("[data-edit]"),db=e.target.closest("[data-delete]");
+ if(eb){
+  let p=products.find(x=>Number(x.id)===Number(eb.dataset.edit));if(!p)return;
+  fields.forEach(k=>$(k==="productCode"?"product-code":k).value=p[k]??"");
+  $("edit-id").value=p.id;$("form-title").textContent="修改商品";$("submit-btn").textContent="儲存修改";$("cancel-edit").hidden=false;
+  variantRows(p.variants||[{name:"一般規格",stock:0}]);scrollTo({top:0,behavior:"smooth"});
+ }
+ if(db){
+  let id=Number(db.dataset.delete),p=products.find(x=>Number(x.id)===id);
+  if(p&&confirm(`確定刪除「${p.productCode}｜${p.name}」？刪除後請下載 products.json 並上傳 GitHub 才會正式移除。`)){
+   products=products.filter(p=>Number(p.id)!==id);if(Number($("edit-id").value)===id)reset();render();$("status").textContent="商品已刪除；請記得下載更新檔並上傳 GitHub。";
+  }
+ }
+});
+$("cancel-edit").onclick=reset;
+$("download-btn").onclick=()=>{
+ let blob=new Blob([JSON.stringify(products,null,2)],{type:"application/json"}),a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);a.download="products.json";a.click();URL.revokeObjectURL(a.href);
+ $("status").textContent="已下載 products.json，請上傳到 GitHub Repository 根目錄並覆蓋舊檔。";
+};
+$("import-btn").onclick=()=>$("import-file").click();
+$("import-file").onchange=async e=>{
+ let f=e.target.files[0];if(!f)return;
+ try{let data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error();products=data.map(normalizeProduct);render();$("status").textContent="匯入成功。舊商品已補上商品編號；尚未設定庫存的規格請編輯後填入庫存。"}
+ catch{$("status").textContent="匯入失敗，請選擇正確的 products.json。"}
+ e.target.value="";
+};
+variantRows([{name:"一般規格",stock:0}]);
 
 // 7-ELEVEN 賣貨便訂單匯入（Excel／CSV）
 const ORDER_KEY="xiangAnImportedOrdersV1";
