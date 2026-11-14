@@ -1,2 +1,2 @@
 // 請在部署前修改下方管理密碼。這是前端簡易密碼鎖，不能抵擋檢視原始碼的人。
-window.ADMIN_PASSWORD = "請改成你自己的密碼";
+window.ADMIN_PASSWORD = "12345";
