@@ -19,8 +19,6 @@ function updateTotal(){const fee=Number(document.querySelector('[name="shippingF
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 document.querySelector('[name="shippingFee"]').addEventListener("input",updateTotal);
 $("store-id").addEventListener("input",e=>{e.target.value=e.target.value.replace(/\D/g,"").slice(0,6);if(selectedStore&&e.target.value!==selectedStore.id){selectedStore=null;$("store-selected").hidden=true}});
-$("store-name").addEventListener("input",()=>{if(selectedStore&&$("store-name").value!==selectedStore.name){selectedStore=null;$("store-selected").hidden=true}});
-$("open-store-map").addEventListener("click",()=>window.open("https://emap.pcsc.com.tw/","_blank","noopener"));
 async function applyCustomStores(){
  try{const cr=await fetch(STORE_CUSTOM_URL,{cache:"no-store"});if(cr.ok){const custom=await cr.json();const disabled=new Set(Array.isArray(custom.disabledIds)?custom.disabledIds.map(String):[]);STORE_LIST=STORE_LIST.filter(x=>!disabled.has(x.id));for(const x of (Array.isArray(custom.stores)?custom.stores:[])){const item={id:String(x.id||""),name:String(x.name||""),address:String(x.address||"")};if(/^\d{6}$/.test(item.id)&&item.name){STORE_LIST=STORE_LIST.filter(v=>v.id!==item.id);STORE_LIST.push(item)}}}}catch(e){console.warn("自訂門市設定載入失敗，使用全台原始清單",e)}
 }
@@ -37,14 +35,14 @@ async function loadStores(){
   if(!STORE_LIST.length)throw Error("門市資料格式不符");
   try{localStorage.setItem(STORE_CACHE_KEY,JSON.stringify({savedAt:Date.now(),list:STORE_LIST}))}catch{}
   status.textContent=`全台 ${STORE_LIST.length.toLocaleString("zh-TW")} 間門市已載入，請輸入名稱或門市編號搜尋。`;
- }catch(err){status.textContent="全台門市清單暫時無法載入。可開啟官方門市地圖查詢，再手動填入六碼店號與門市名稱。";console.error(err)}
+ }catch(err){status.textContent="全台門市清單暫時無法載入，請稍後重新整理頁面。";console.error(err)}
 }
 function renderStoreResults(){
  const q=$("store-search").value.trim().toLowerCase(),box=$("store-search-results"),status=$("store-search-status");box.innerHTML="";
  if(!q){if(STORE_LIST.length)status.textContent=`全台 ${STORE_LIST.length.toLocaleString("zh-TW")} 間門市已備妥，請輸入名稱或門市編號搜尋。`;return}
  if(q.length<2&&!/^\d+$/.test(q)){status.textContent="請至少輸入 2 個字搜尋門市名稱。";return}
  const found=STORE_LIST.filter(x=>x.name.toLowerCase().includes(q)||x.id.includes(q)).slice(0,30);
- status.textContent=found.length?`找到 ${found.length} 間符合門市${found.length===30?"（最多顯示 30 筆）":""}`:"找不到符合的門市，請換個關鍵字或使用官方地圖。";
+ status.textContent=found.length?`找到 ${found.length} 間符合門市${found.length===30?"（最多顯示 30 筆）":""}`:"找不到符合的門市，請更換搜尋關鍵字。";
  box.innerHTML=found.map((x,i)=>`<button type="button" class="store-result" data-store-index="${STORE_LIST.indexOf(x)}"><span><strong>${escapeHtml(x.name)}</strong><small>${escapeHtml(x.address)}</small></span><span class="store-code">${escapeHtml(x.id)}</span></button>`).join("");
 }
 $("store-search").addEventListener("input",renderStoreResults);
@@ -55,7 +53,7 @@ $("checkout-form").addEventListener("submit",async e=>{
  const endpoint=window.CHECKOUT_CONFIG?.WEB_APP_URL||"";
  if(!endpoint||endpoint.includes("請填入")){$("checkout-status").textContent="尚未設定 Google 試算表接收網址。";return}
  const f=new FormData(e.currentTarget),fee=Number(f.get("shippingFee")),productAmount=subtotal();
- if(!/^\d{6}$/.test(String(f.get("storeId")||""))||!String(f.get("storeName")||"").trim()){$("checkout-status").textContent="請搜尋並選擇 7-ELEVEN 門市，或填妥六碼店號與門市名稱。";return}
+ if(!/^\d{6}$/.test(String(f.get("storeId")||""))||!String(f.get("storeName")||"").trim()){$("checkout-status").textContent="請先搜尋並選擇 7-ELEVEN 門市。";return}
  if(productAmount+fee<55||productAmount+fee>20000){$("checkout-status").textContent="商品金額加運費需介於 55 至 20,000 元。";return}
  const items=cart.map(x=>{const p=PRODUCTS.find(p=>Number(p.id)===Number(x.id));return{productCode:p.productCode||("P"+p.id),name:p.name,variant:x.variant||"一般規格",quantity:x.qty,unitPrice:Number(p.price),amount:Number(p.price)*x.qty}});
  const order={orderId:"XAFW"+Date.now(),createdAt:new Date().toISOString(),recipient:String(f.get("recipient")).trim(),phone:String(f.get("phone")).trim(),storeId:String(f.get("storeId")).trim(),storeName:String(f.get("storeName")||"").trim(),storeAddress:String(f.get("storeAddress")||"").trim(),temperature:f.get("temperature"),items,productAmount,shippingFee:fee,totalAmount:productAmount+fee,note:String(f.get("note")||""),social:String(f.get("social")||"")};
