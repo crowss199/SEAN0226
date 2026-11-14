@@ -18,3 +18,5 @@
 .variant-row input{width:100%;display:block;margin-top:6px;padding:10px;border:1px solid #dedfd6;background:white;font-size:13px}
 .variant-row .remove-variant{padding:10px}
 @media(max-width:600px){.variant-row{grid-template-columns:1fr 100px auto;gap:6px}.variant-row .remove-variant{padding:9px 7px}}
+
+#store-admin-form{display:grid;gap:10px}#store-admin-form label{margin:8px 0}.product-row .row-actions{flex-wrap:wrap}

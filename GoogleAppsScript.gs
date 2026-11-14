@@ -3,12 +3,7 @@ const SHEET_NAME="官網訂單";
 function setup(){
  const ss=SpreadsheetApp.getActiveSpreadsheet();let sh=ss.getSheetByName(SHEET_NAME);
  if(!sh)sh=ss.insertSheet(SHEET_NAME);
- // 若舊表仍有門市名稱、門市地址欄，先移除 F、G 欄，避免新訂單欄位錯位。
- if(sh.getLastRow()>0){
-  const headers=sh.getRange(1,1,1,Math.max(sh.getLastColumn(),1)).getDisplayValues()[0];
-  if(headers[5]==="門市名稱" && headers[6]==="門市地址") sh.deleteColumns(6,2);
- }
- if(sh.getLastRow()===0){sh.appendRow(["訂單編號","下單時間","取件人姓名","取件人手機","取件門市店號","溫層","商品","商品金額","運費金額","備註","其他資訊","訂單狀態"]);sh.setFrozenRows(1);}
+ if(sh.getLastRow()===0){sh.appendRow(["訂單編號","下單時間","取件人姓名","取件人手機","取件門市店號","門市名稱","門市地址","溫層","商品","商品金額","運費金額","備註","其他資訊","訂單狀態"]);sh.setFrozenRows(1);}
 }
 function doPost(e){
  try{
@@ -21,7 +16,7 @@ function doPost(e){
   const ids=sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,1).getDisplayValues().flat():[];
   if(ids.includes(String(d.orderId)))throw Error("重複訂單");
   const goods=d.items.map(i=>`${i.name}x${i.quantity}`).join("");
-  sh.appendRow([String(d.orderId),new Date(d.createdAt||Date.now()),String(d.recipient),String(d.phone),String(d.storeId),String(d.temperature),goods,Number(d.productAmount),Number(d.shippingFee),String(d.note||""),String(d.social||""),"新訂單"]);
+  sh.appendRow([String(d.orderId),new Date(d.createdAt||Date.now()),String(d.recipient),String(d.phone),String(d.storeId),String(d.storeName||""),String(d.storeAddress||""),String(d.temperature),goods,Number(d.productAmount),Number(d.shippingFee),String(d.note||""),String(d.social||""),"新訂單"]);
   return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
  }catch(err){return ContentService.createTextOutput(JSON.stringify({ok:false,error:String(err)})).setMimeType(ContentService.MimeType.JSON)}
 }

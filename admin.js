@@ -25,7 +25,7 @@ $("image-file").addEventListener("change",async e=>{
 });
 
 const AUTH_KEY="xiangAnAdminSession";
-function showAdmin(){ $("login-panel").hidden=true;$("admin-app").hidden=false;loadProducts();loadOrders();loadAnnouncementAdmin();loadSiteSettingsAdmin();}
+function showAdmin(){ $("login-panel").hidden=true;$("admin-app").hidden=false;loadProducts();loadOrders();loadAnnouncementAdmin();loadSiteSettingsAdmin();loadStoreAdmin();}
 function logout(){sessionStorage.removeItem(AUTH_KEY);$("admin-app").hidden=true;$("login-panel").hidden=false;$("password").value="";$("admin-id").value="";}
 $("login-form").addEventListener("submit",e=>{
  e.preventDefault();
@@ -193,3 +193,41 @@ $("notice-download").addEventListener("click",()=>{
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="announcement.json";a.click();URL.revokeObjectURL(a.href);
  $("notice-status").textContent="已下載 announcement.json，請上傳至 GitHub Repository 根目錄覆蓋舊檔。";
 });
+
+
+// 7-ELEVEN store overrides/custom records. Export stores-custom.json and publish it with the static site.
+const STORE_CUSTOM_FILE="stores-custom.json";
+let managedStores=[],disabledStoreIds=[];
+function normalizeManagedStore(x){return {id:String(x.id||"").replace(/\D/g,"").slice(0,6),name:String(x.name||x.store||"").trim(),address:String(x.address||"").trim()}}
+async function loadStoreAdmin(){
+ try{
+  const r=await fetch("./stores-custom.json",{cache:"no-store"});
+  if(r.ok){const d=await r.json();managedStores=(Array.isArray(d.stores)?d.stores:[]).map(normalizeManagedStore).filter(x=>/^\d{6}$/.test(x.id)&&x.name);disabledStoreIds=Array.isArray(d.disabledIds)?d.disabledIds.map(String):[];}
+ }catch{}
+ renderManagedStores();
+}
+function renderManagedStores(){
+ const box=$("managed-store-list");if(!box)return;
+ const rows=[...managedStores.map(x=>({...x,disabled:false})),...disabledStoreIds.filter(id=>!managedStores.some(x=>x.id===id)).map(id=>({id,name:"（已停用外部門市）",address:"",disabled:true}))];
+ box.innerHTML=rows.length?rows.map((x,i)=>`<div class="product-row"><div><strong>${escapeHtmlAdmin(x.name)}</strong><small>門市編號：${escapeHtmlAdmin(x.id)}${x.address?"｜"+escapeHtmlAdmin(x.address):""}${x.disabled?"｜已停用":""}</small></div><div class="row-actions">${x.disabled?`<button class="light" type="button" data-store-enable="${escapeHtmlAdmin(x.id)}">恢復</button>`:`<button class="light" type="button" data-store-edit="${escapeHtmlAdmin(x.id)}">編輯</button><button class="delete" type="button" data-store-delete="${escapeHtmlAdmin(x.id)}">刪除／停用</button>`}</div></div>`).join(""):'<p class="hint">尚未新增自訂或修改門市。全台外部清單仍可在結帳頁搜尋。</p>';
+}
+function escapeHtmlAdmin(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function resetStoreForm(){$("store-admin-form").reset();$("store-edit-original-id").value="";$("store-cancel-edit").hidden=true;$("store-save-btn").textContent="新增／儲存門市"}
+$("store-admin-form")?.addEventListener("submit",e=>{
+ e.preventDefault();const id=$("admin-store-id").value.replace(/\D/g,"").slice(0,6),name=$("admin-store-name").value.trim(),address=$("admin-store-address").value.trim(),oldId=$("store-edit-original-id").value;
+ if(!/^\d{6}$/.test(id)||!name){$("store-admin-status").textContent="請輸入六碼門市編號及門市名稱。";return}
+ if(managedStores.some(x=>x.id===id&&x.id!==oldId)){ $("store-admin-status").textContent="此門市編號已存在於自訂清單。";return }
+ if(oldId){managedStores=managedStores.filter(x=>x.id!==oldId);if(oldId!==id&&!disabledStoreIds.includes(oldId))disabledStoreIds.push(oldId)}
+ managedStores=managedStores.filter(x=>x.id!==id);managedStores.push({id,name,address});disabledStoreIds=disabledStoreIds.filter(x=>x!==id);
+ resetStoreForm();renderManagedStores();$("store-admin-status").textContent="門市資料已更新。請下載 stores-custom.json 並上傳 GitHub 才會套用至官網。";
+});
+$("managed-store-list")?.addEventListener("click",e=>{
+ const edit=e.target.closest("[data-store-edit]"),del=e.target.closest("[data-store-delete]"),enable=e.target.closest("[data-store-enable]");
+ if(edit){const x=managedStores.find(v=>v.id===edit.dataset.storeEdit);if(!x)return;$("store-edit-original-id").value=x.id;$("admin-store-id").value=x.id;$("admin-store-name").value=x.name;$("admin-store-address").value=x.address;$("store-cancel-edit").hidden=false;$("store-save-btn").textContent="儲存門市修改";$("admin-store-id").focus()}
+ if(del){const id=del.dataset.storeDelete;if(!confirm(`確定刪除／停用門市 ${id}？`))return;managedStores=managedStores.filter(x=>x.id!==id);if(!disabledStoreIds.includes(id))disabledStoreIds.push(id);renderManagedStores();$("store-admin-status").textContent="門市已刪除或停用；請下載 stores-custom.json 並上傳 GitHub。"}
+ if(enable){disabledStoreIds=disabledStoreIds.filter(x=>x!==enable.dataset.storeEnable);renderManagedStores();$("store-admin-status").textContent="已取消停用；請下載 stores-custom.json 並上傳 GitHub。"}
+});
+$("store-cancel-edit")?.addEventListener("click",resetStoreForm);
+$("store-download")?.addEventListener("click",()=>{const data={updatedAt:new Date().toISOString(),stores:managedStores,disabledIds:disabledStoreIds};const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=STORE_CUSTOM_FILE;a.click();URL.revokeObjectURL(a.href);$("store-admin-status").textContent="已下載 stores-custom.json。請上傳 GitHub Repository 根目錄並覆蓋舊檔。"});
+$("store-import-btn")?.addEventListener("click",()=>$("store-import-file").click());
+$("store-import-file")?.addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;try{const d=JSON.parse(await file.text());managedStores=(Array.isArray(d.stores)?d.stores:[]).map(normalizeManagedStore).filter(x=>/^\d{6}$/.test(x.id)&&x.name);disabledStoreIds=Array.isArray(d.disabledIds)?d.disabledIds.map(String).filter(x=>/^\d{6}$/.test(x)):[];renderManagedStores();$("store-admin-status").textContent="門市設定檔匯入完成，請檢查後下載。"}catch{$("store-admin-status").textContent="檔案格式錯誤，請選擇正確的 stores-custom.json。"}e.target.value=""});

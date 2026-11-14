@@ -34,6 +34,22 @@
 <label>商品頁面網址（選填）<input id="url" type="url" placeholder="可留空"></label>
 <div class="actions"><button class="primary" type="submit" id="submit-btn">＋ 加入商品清單</button><button type="button" id="cancel-edit" class="light" hidden>取消編輯</button></div><p class="hint">＊必填。每個規格都要填寫規格名稱與庫存整數（可填 0）。按下加入商品或儲存修改後，系統會自動下載 products.json。</p><p class="status" id="status" aria-live="polite"></p></form></section>
 <section class="panel"><div class="list-head"><h2>目前商品 <span id="count"></span></h2><div class="actions"><button class="light" id="import-btn" type="button">匯入 products.json</button><input type="file" id="import-file" accept=".json,application/json" hidden><button class="primary" id="download-btn" type="button">下載更新檔</button></div></div><p class="hint">新增、修改或刪除商品後，系統會自動下載 products.json。請將下載檔上傳 GitHub 根目錄並覆蓋舊檔，官網才會更新。也可使用右上方「下載更新檔」再次下載。</p><div id="product-list" class="product-list"></div></section>
+<section class="panel" id="stores-panel">
+ <h2>7-ELEVEN 門市資料管理</h2>
+ <p class="hint">可新增自訂門市、修改現有門市資料或停用錯誤門市。完成後下載 stores-custom.json 並上傳 GitHub 根目錄，結帳搜尋就會套用更新。外部全台清單仍會保留。</p>
+ <form id="store-admin-form">
+  <input type="hidden" id="store-edit-original-id">
+  <div class="two">
+   <label>門市編號（6碼）<input id="admin-store-id" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required placeholder="例如 123456"></label>
+   <label>門市名稱<input id="admin-store-name" maxlength="60" required placeholder="例如：翔安門市"></label>
+  </div>
+  <label>門市地址（選填）<input id="admin-store-address" maxlength="150" placeholder="輸入門市地址"></label>
+  <div class="actions"><button class="primary" type="submit" id="store-save-btn">新增／儲存門市</button><button class="light" type="button" id="store-cancel-edit" hidden>取消編輯</button><button class="light" type="button" id="store-download">下載 stores-custom.json</button><button class="light" type="button" id="store-import-btn">匯入 stores-custom.json</button><input type="file" id="store-import-file" accept=".json,application/json" hidden></div>
+  <p class="status" id="store-admin-status" aria-live="polite"></p>
+ </form>
+ <div id="managed-store-list" class="product-list"></div>
+ <p class="hint">提醒：GitHub Pages 是靜態網站，管理頁不能直接改寫線上檔案。每次修改後請下載 stores-custom.json，手動上傳到 GitHub Repository 根目錄並覆蓋舊檔。</p>
+</section>
 <section class="panel" id="orders-panel">
  <div class="list-head"><h2>賣貨便訂單匯入 <span id="order-count">（0 筆）</span></h2><div class="actions"><button class="light" id="export-orders" type="button">匯出訂單 CSV</button><button class="primary" id="clear-orders" type="button">清空訂單</button></div></div>
  <p class="hint">從賣貨便後台匯出訂單 Excel／CSV，再在下方選取檔案。系統會先辨識欄位並提供預覽，確認後才匯入。</p>

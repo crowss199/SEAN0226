@@ -50,13 +50,17 @@
 注意：這不是賣貨便官方 API，也不會自動建立託運單。網站目前透過 Apps Script 接收資料，採 no-cors 請求，請務必檢查試算表確認是否收到。試算表必須維持私人，內含客戶個資，不可公開分享。正式收單前請先用測試資料驗證。
 
 
-## 7-ELEVEN 門市查詢（人工回填版）
+## 7-ELEVEN 門市搜尋與選取（全台灣）
 
-結帳頁的「查詢 7-ELEVEN 門市」會開啟統一超商官方電子地圖：
-https://emap.pcsc.com.tw/
+結帳頁會載入全台 7-ELEVEN 門市清單，支援以門市名稱或六碼門市編號搜尋。顧客點選搜尋結果後，系統會自動填入門市名稱、門市編號及地址，並將門市資料一併送入 Google 試算表訂單。
 
-客人查詢後，將六碼門市店號填回結帳頁；門市名稱與地址欄位可依地圖資料填寫。這個官方地圖頁目前沒有確認可供本 GitHub Pages 網站直接取得選店回傳值的公開介面，因此不宣稱能在選店後自動回傳名稱/地址。訂單會將店號、門市名稱及地址一併寫入 Google 試算表。
+- 門市資料來源：https://github.com/Cojad/taiwan-7Eleven-store
+- 清單 JSON：https://raw.githubusercontent.com/Cojad/taiwan-7Eleven-store/master/stores.json
+- 官方門市地圖備援：https://emap.pcsc.com.tw/
+- 門市清單在瀏覽器快取 24 小時，減少重複下載；來源專案以 GitHub Actions 每日更新。
+- 此搜尋功能需要顧客瀏覽器能連線讀取 GitHub Raw。若資料來源暫時無法連線，仍可開啟官方門市地圖，並手動填入六碼店號與門市名稱。
 
+注意：門市清單為外部資料來源的快照，實際寄件前請以 7-ELEVEN 官方門市資訊確認門市仍可使用。
 
 ## 首頁公告欄編輯
 1. 登入 `admin.html` 管理頁。
@@ -124,3 +128,15 @@ https://emap.pcsc.com.tw/
 Google Apps Script 寫入「官網訂單」的商品欄時，多種商品會直接連續串接，不再加入「；」等間隔符號；每項商品仍保留 `商品名稱 x數量` 格式。若已部署 Apps Script，請同步將本 ZIP 內的 `GoogleAppsScript.gs` 程式碼貼回 Apps Script 編輯器，儲存後重新部署新版本，否則線上舊部署仍會使用原本的分隔符號。
 
 商品匯出格式進一步調整為「商品名稱x數量」，x 前後不加空格；多項商品直接連續串接。
+
+
+## 7-ELEVEN 全台門市搜尋更新
+
+結帳頁已加入門市名稱／六碼門市編號搜尋，選取後自動帶入名稱、編號及地址；訂單欄位維持寫入 Google 試算表。更新官網時請將本 ZIP 全部檔案上傳至 GitHub Repository，並確認 `checkout.html`、`checkout.js` 與 `checkout-page.css` 一起更新。
+
+
+## 7-ELEVEN 門市資料新增、修改與刪除
+
+管理頁新增「7-ELEVEN 門市資料管理」區塊，可手動新增自訂門市、修改既有門市（以相同六碼店號覆蓋外部資料）、刪除自訂門市或停用外部門市，也可匯入既有 `stores-custom.json`。完成後按「下載 stores-custom.json」，將檔案上傳 GitHub Repository 根目錄並覆蓋舊檔。結帳頁會先載入全台公開門市清單，再套用自訂覆蓋與停用設定；顧客仍可用門市名稱或六碼店號搜尋及選取。
+
+注意：管理頁無法直接寫入 GitHub，必須下載設定檔後手動上傳。若外部全台門市資料源無法連線，仍可搜尋不到未快取的外部門市；自訂門市則會在 `stores-custom.json` 成功載入時提供。
