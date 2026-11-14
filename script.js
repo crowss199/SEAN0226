@@ -33,7 +33,7 @@ $("checkout-form").addEventListener("submit",async e=>{
 
 // 7-ELEVEN official store map: open separately; user copies the selected store ID back.
 $("open-store-map").addEventListener("click",()=>{
- window.open("https://emap.pcsc.com.tw/","_blank","noopener");
+ window.open("https://emap.pcsc.com.tw/","_blank","noopener,noreferrer");
 });
 $("store-id").addEventListener("input",e=>{
  e.target.value=e.target.value.replace(/\D/g,"").slice(0,6);
