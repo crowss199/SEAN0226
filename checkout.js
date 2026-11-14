@@ -1,6 +1,6 @@
-const CART_KEY="xiangAnJapandiCart",ORDER_KEY="xiangAnLastOrder";
+const CART_KEY="xiangAnJapandiCart",ORDER_KEY="xiangAnLastOrder",STORE_CACHE_KEY="xiangAn711Stores",STORE_DATA_URL="https://raw.githubusercontent.com/Cojad/taiwan-7Eleven-store/master/stores.json";
 const $=id=>document.getElementById(id),money=n=>"NT$ "+Number(n).toLocaleString("zh-TW");
-let PRODUCTS=[],cart=[];
+let PRODUCTS=[],cart=[],STORE_LIST=[],selectedStore=null;
 try{cart=JSON.parse(localStorage.getItem(CART_KEY)||"[]")}catch{cart=[]}
 async function init(){
  $("year").textContent=new Date().getFullYear();
@@ -18,13 +18,40 @@ function renderSummary(){
 function updateTotal(){const fee=Number(document.querySelector('[name="shippingFee"]').value||0);$("checkout-shipping").textContent=money(fee);$("checkout-grand-total").textContent=money(subtotal()+fee)}
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 document.querySelector('[name="shippingFee"]').addEventListener("input",updateTotal);
-$("store-id").addEventListener("input",e=>{e.target.value=e.target.value.replace(/\D/g,"").slice(0,6)});
+$("store-id").addEventListener("input",e=>{e.target.value=e.target.value.replace(/\D/g,"").slice(0,6);if(selectedStore&&e.target.value!==selectedStore.id){selectedStore=null;$("store-selected").hidden=true}});
+$("store-name").addEventListener("input",()=>{if(selectedStore&&$("store-name").value!==selectedStore.name){selectedStore=null;$("store-selected").hidden=true}});
 $("open-store-map").addEventListener("click",()=>window.open("https://emap.pcsc.com.tw/","_blank","noopener"));
+async function loadStores(){
+ const status=$("store-search-status");
+ try{
+  let cached=null;try{cached=JSON.parse(localStorage.getItem(STORE_CACHE_KEY)||"null")}catch{}
+  if(cached&&Array.isArray(cached.list)&&cached.savedAt>Date.now()-24*60*60*1000){STORE_LIST=cached.list;status.textContent=`已載入全台 ${STORE_LIST.length.toLocaleString("zh-TW")} 間門市（快取資料）`;return}
+  status.textContent="正在下載全台門市資料，請稍候…";
+  const response=await fetch(STORE_DATA_URL,{cache:"no-store"});if(!response.ok)throw Error("門市資料下載失敗");
+  const raw=await response.json();
+  STORE_LIST=Object.entries(raw).map(([id,v])=>({id:String(id).replace(/\D/g,""),name:String(v.store||v.name||""),address:String(v.address||"")})).filter(x=>/^\d{6}$/.test(x.id)&&x.name);
+  if(!STORE_LIST.length)throw Error("門市資料格式不符");
+  try{localStorage.setItem(STORE_CACHE_KEY,JSON.stringify({savedAt:Date.now(),list:STORE_LIST}))}catch{}
+  status.textContent=`全台 ${STORE_LIST.length.toLocaleString("zh-TW")} 間門市已載入，請輸入名稱或門市編號搜尋。`;
+ }catch(err){status.textContent="全台門市清單暫時無法載入。可開啟官方門市地圖查詢，再手動填入六碼店號與門市名稱。";console.error(err)}
+}
+function renderStoreResults(){
+ const q=$("store-search").value.trim().toLowerCase(),box=$("store-search-results"),status=$("store-search-status");box.innerHTML="";
+ if(!q){if(STORE_LIST.length)status.textContent=`全台 ${STORE_LIST.length.toLocaleString("zh-TW")} 間門市已備妥，請輸入名稱或門市編號搜尋。`;return}
+ if(q.length<2&&!/^\d+$/.test(q)){status.textContent="請至少輸入 2 個字搜尋門市名稱。";return}
+ const found=STORE_LIST.filter(x=>x.name.toLowerCase().includes(q)||x.id.includes(q)).slice(0,30);
+ status.textContent=found.length?`找到 ${found.length} 間符合門市${found.length===30?"（最多顯示 30 筆）":""}`:"找不到符合的門市，請換個關鍵字或使用官方地圖。";
+ box.innerHTML=found.map((x,i)=>`<button type="button" class="store-result" data-store-index="${STORE_LIST.indexOf(x)}"><span><strong>${escapeHtml(x.name)}</strong><small>${escapeHtml(x.address)}</small></span><span class="store-code">${escapeHtml(x.id)}</span></button>`).join("");
+}
+$("store-search").addEventListener("input",renderStoreResults);
+$("store-search-results").addEventListener("click",e=>{const b=e.target.closest("[data-store-index]");if(!b)return;const x=STORE_LIST[Number(b.dataset.storeIndex)];if(!x)return;selectedStore=x;$("store-id").value=x.id;$("store-name").value=x.name;$("store-address").value=x.address;$("store-search").value=x.name;$("store-search-results").innerHTML="";$("store-search-status").textContent="已選取門市，請確認門市名稱與編號無誤。";$("store-selected").hidden=false;$("store-selected").innerHTML=`<strong>已選取：${escapeHtml(x.name)}</strong>門市編號：${escapeHtml(x.id)}${x.address?`<br>地址：${escapeHtml(x.address)}`:""}`;});
+loadStores();
 $("checkout-form").addEventListener("submit",async e=>{
  e.preventDefault();if(!cart.length)return;
  const endpoint=window.CHECKOUT_CONFIG?.WEB_APP_URL||"";
  if(!endpoint||endpoint.includes("請填入")){$("checkout-status").textContent="尚未設定 Google 試算表接收網址。";return}
  const f=new FormData(e.currentTarget),fee=Number(f.get("shippingFee")),productAmount=subtotal();
+ if(!/^\d{6}$/.test(String(f.get("storeId")||""))||!String(f.get("storeName")||"").trim()){$("checkout-status").textContent="請搜尋並選擇 7-ELEVEN 門市，或填妥六碼店號與門市名稱。";return}
  if(productAmount+fee<55||productAmount+fee>20000){$("checkout-status").textContent="商品金額加運費需介於 55 至 20,000 元。";return}
  const items=cart.map(x=>{const p=PRODUCTS.find(p=>Number(p.id)===Number(x.id));return{productCode:p.productCode||("P"+p.id),name:p.name,variant:x.variant||"一般規格",quantity:x.qty,unitPrice:Number(p.price),amount:Number(p.price)*x.qty}});
  const order={orderId:"XAFW"+Date.now(),createdAt:new Date().toISOString(),recipient:String(f.get("recipient")).trim(),phone:String(f.get("phone")).trim(),storeId:String(f.get("storeId")).trim(),storeName:String(f.get("storeName")||"").trim(),storeAddress:String(f.get("storeAddress")||"").trim(),temperature:f.get("temperature"),items,productAmount,shippingFee:fee,totalAmount:productAmount+fee,note:String(f.get("note")||""),social:String(f.get("social")||"")};
