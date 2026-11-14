@@ -1,5 +1,5 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>商品管理｜翔安富文具</title><link rel="stylesheet" href="admin.css"></head><body>
-<header><a href="index.html">← 回到官網</a><strong>翔安富文具｜商品管理</strong><span>PRODUCT ADMIN</span></header>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>商品與訂單管理｜翔安富文具</title><link rel="stylesheet" href="admin.css"></head><body>
+<header><a href="index.html">← 回到官網</a><strong>翔安富文具｜商品與訂單管理</strong><span>PRODUCT ADMIN</span></header>
 <main>
 <section id="login-panel" class="login-card"><p class="eyebrow">PRIVATE AREA</p><h1>管理員登入</h1><p>請輸入管理密碼以開啟商品管理工具。</p><form id="login-form"><label>管理密碼<input id="password" type="password" autocomplete="current-password" required placeholder="輸入管理密碼"></label><button class="primary" type="submit">登入管理頁 →</button><p id="login-error" class="error" aria-live="polite"></p></form></section>
 <div id="admin-app" hidden>
@@ -9,8 +9,22 @@
 <div class="two"><label>商品價格（元）＊<input id="price" type="number" min="0" step="1" required placeholder="例如：45"></label><label>商品標籤<input id="tag" maxlength="24" placeholder="例如：新品推薦"></label></div>
 <label>商品介紹／規格<input id="desc" maxlength="120" placeholder="例如：0.5mm 黑色"></label>
 <div class="two"><label>卡片文字圖案<input id="symbol" maxlength="12" placeholder="例如：UNI"></label><label>商品圖片網址<input id="image" type="url" placeholder="https://...（可留空）"></label></div>
-<label>iOPEN Mall 商品網址<input id="url" type="url" placeholder="留空則連到官方賣場首頁"></label>
+<label>商品頁面網址（選填）<input id="url" type="url" placeholder="可留空"></label>
 <div class="actions"><button class="primary" type="submit" id="submit-btn">＋ 加入商品清單</button><button type="button" id="cancel-edit" class="light" hidden>取消編輯</button></div><p class="hint">＊必填。圖片請使用可公開瀏覽的 HTTPS 圖片網址；商品連結可貼上單品詳細頁網址。</p><p class="status" id="status" aria-live="polite"></p></form></section>
 <section class="panel"><div class="list-head"><h2>目前商品 <span id="count"></span></h2><div class="actions"><button class="light" id="import-btn" type="button">匯入 products.json</button><input type="file" id="import-file" accept=".json,application/json" hidden><button class="primary" id="download-btn" type="button">下載更新檔</button></div></div><p class="hint">可修改或刪除商品。完成所有變更後，記得下載更新檔。</p><div id="product-list" class="product-list"></div></section>
+<section class="panel" id="orders-panel">
+ <div class="list-head"><h2>賣貨便訂單匯入 <span id="order-count">（0 筆）</span></h2><div class="actions"><button class="light" id="export-orders" type="button">匯出訂單 CSV</button><button class="primary" id="clear-orders" type="button">清空訂單</button></div></div>
+ <p class="hint">從賣貨便後台匯出訂單 Excel／CSV，再在下方選取檔案。系統會先辨識欄位並提供預覽，確認後才匯入。</p>
+ <label class="file-pick">選擇賣貨便訂單檔案<input type="file" id="order-file" accept=".xlsx,.xls,.csv" /></label>
+ <div id="mapping-area" hidden>
+  <h3>欄位確認</h3><p class="hint">若自動辨識不正確，請在下拉選單中指定對應欄位。</p>
+  <div class="mapping-grid" id="mapping-grid"></div>
+  <div class="table-wrap"><table id="order-preview"><thead></thead><tbody></tbody></table></div>
+  <div class="actions"><button class="primary" id="confirm-import" type="button">確認匯入訂單</button><button class="light" id="cancel-import" type="button">取消</button></div>
+  <p id="order-import-status" class="status" aria-live="polite"></p>
+ </div>
+ <div class="table-wrap"><table id="orders-table"><thead><tr><th>訂單編號</th><th>訂購人</th><th>商品／明細</th><th>數量</th><th>金額</th><th>訂單日期</th></tr></thead><tbody id="orders-body"><tr><td colspan="6">尚未匯入訂單。</td></tr></tbody></table></div>
+ <p class="hint">訂單資料只儲存在目前這台裝置、目前瀏覽器的本機儲存空間，不會自動同步到其他裝置或 GitHub。請妥善保管匯出的訂單檔，避免公開上傳含有客戶個資的資料。</p>
+</section>
 <section class="notice"><strong>安全與更新說明</strong><p>此頁的密碼檢查在瀏覽器前端執行，密碼可能被查看原始碼的人找到，僅適合低風險、非機密用途。此頁不會直接寫入 GitHub；下載 products.json 後，仍須上傳至 Repository 根目錄並覆蓋舊檔。</p></section>
-</div></main><script src="admin-config.js"></script><script src="admin.js"></script></body></html>
+</div></main><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="admin-config.js"></script><script src="admin.js"></script></body></html>
