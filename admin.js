@@ -1,6 +1,6 @@
 const $=id=>document.getElementById(id),MALL="#";let products=[];
 const AUTH_KEY="xiangAnAdminSession";
-function showAdmin(){ $("login-panel").hidden=true;$("admin-app").hidden=false;loadProducts();loadOrders();}
+function showAdmin(){ $("login-panel").hidden=true;$("admin-app").hidden=false;loadProducts();loadOrders();loadAnnouncementAdmin();}
 function logout(){sessionStorage.removeItem(AUTH_KEY);$("admin-app").hidden=true;$("login-panel").hidden=false;$("password").value="";}
 $("login-form").addEventListener("submit",e=>{e.preventDefault();if($("password").value===window.ADMIN_PASSWORD){sessionStorage.setItem(AUTH_KEY,"yes");$("login-error").textContent="";showAdmin()}else{$("login-error").textContent="密碼不正確，請再試一次。"}});
 $("logout").addEventListener("click",logout);
@@ -40,3 +40,21 @@ $("cancel-import").onclick=()=>{$("mapping-area").hidden=true;parsedOrderRows=[]
 $("export-orders").onclick=()=>{let rows=getOrders(),cols=orderFields.map(f=>f.label),csv=[cols,...rows.map(o=>orderFields.map(f=>o[f.key]??""))].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n"),blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="xiang-an-orders.csv";a.click();URL.revokeObjectURL(a.href)};
 $("clear-orders").onclick=()=>{if(confirm("確定清空這台裝置瀏覽器內的所有匯入訂單？此操作無法復原。")){saveOrders([]);renderOrders()}};
 if(sessionStorage.getItem(AUTH_KEY)==="yes")showAdmin();
+
+// Homepage announcement editor
+let currentAnnouncement={title:"翔安富文具公告",message:"歡迎光臨！最新商品與營業資訊請留意本公告。",updatedAt:""};
+async function loadAnnouncementAdmin(){
+ try{const r=await fetch("./announcement.json",{cache:"no-store"});if(r.ok)currentAnnouncement=await r.json()}catch{}
+ $("notice-admin-title").value=currentAnnouncement.title||"";
+ $("notice-admin-message").value=currentAnnouncement.message||"";
+}
+$("announcement-form").addEventListener("submit",e=>{
+ e.preventDefault();
+ currentAnnouncement={title:$("notice-admin-title").value.trim(),message:$("notice-admin-message").value.trim(),updatedAt:new Date().toLocaleDateString("zh-TW")};
+ $("notice-status").textContent="公告已在管理頁預覽資料中更新；請按「下載 announcement.json」，再上傳 GitHub 覆蓋舊檔，官網才會同步更新。";
+});
+$("notice-download").addEventListener("click",()=>{
+ const blob=new Blob([JSON.stringify(currentAnnouncement,null,2)],{type:"application/json;charset=utf-8"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="announcement.json";a.click();URL.revokeObjectURL(a.href);
+ $("notice-status").textContent="已下載 announcement.json，請上傳至 GitHub Repository 根目錄覆蓋舊檔。";
+});

@@ -38,3 +38,19 @@ $("open-store-map").addEventListener("click",()=>{
 $("store-id").addEventListener("input",e=>{
  e.target.value=e.target.value.replace(/\D/g,"").slice(0,6);
 });
+
+// Load editable store notice from announcement.json
+async function loadAnnouncement(){
+ try{
+  const res=await fetch("./announcement.json",{cache:"no-store"});
+  if(!res.ok)throw Error();
+  const notice=await res.json();
+  const title=document.getElementById("notice-title");
+  const message=document.getElementById("notice-message");
+  const updated=document.getElementById("notice-updated");
+  if(title)title.textContent=notice.title||"翔安富文具公告";
+  if(message)message.textContent=notice.message||"";
+  if(updated&&notice.updatedAt)updated.textContent="更新："+notice.updatedAt;
+ }catch(err){console.warn("公告資料讀取失敗",err)}
+}
+loadAnnouncement();

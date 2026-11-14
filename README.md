@@ -56,3 +56,13 @@
 https://emap.pcsc.com.tw/ecmap/default.aspx
 
 客人查詢後，將六碼門市店號填回結帳頁；門市名稱與地址欄位可依地圖資料填寫。這個官方地圖頁目前沒有確認可供本 GitHub Pages 網站直接取得選店回傳值的公開介面，因此不宣稱能在選店後自動回傳名稱/地址。訂單會將店號、門市名稱及地址一併寫入 Google 試算表。
+
+
+## 首頁公告欄編輯
+1. 登入 `admin.html` 管理頁。
+2. 找到「首頁公告欄編輯」，修改公告標題與內容。
+3. 按「預覽並儲存公告」，再按「下載 announcement.json」。
+4. 將下載的 `announcement.json` 上傳 GitHub Repository 根目錄，覆蓋舊檔並 Commit changes。
+5. 重新整理首頁即可看到新公告。
+
+公告內容儲存在公開網站的 `announcement.json`，請只放公開資訊，不要放客戶個資、私人電話或其他機密。
