@@ -121,7 +121,7 @@
 
 
 ## 商品規格與庫存無法寫入的處理
-商品管理頁是 GitHub Pages 靜態網站，瀏覽器不能直接改寫 GitHub 上的 `products.json`。本修正版在新增、修改或刪除商品後會自動下載最新的 `products.json`。請將下載檔上傳到 GitHub Repository 根目錄並覆蓋舊檔，官網才會更新。也可使用「下載更新檔」按鈕手動下載。
+商品管理頁是 GitHub Pages 靜態網站，瀏覽器不能直接改寫 GitHub 上的 `products.json`。本修正版在新增、修改或刪除商品後不會自動下載 `products.json`；商品修改會暫存在目前瀏覽器。全部修改完成後，請手動按「下載更新檔」一次下載最新的 `products.json`。請將下載檔上傳到 GitHub Repository 根目錄並覆蓋舊檔，官網才會更新。也可使用「下載更新檔」按鈕手動下載。
 
 
 ## 多種商品匯出格式

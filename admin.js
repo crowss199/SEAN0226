@@ -71,8 +71,9 @@ $("variant-rows").addEventListener("click",e=>{
  const list=rows.filter(r=>r!==e.target.closest(".variant-row")).map(r=>({name:r.querySelector(".variant-name").value,stock:Number(r.querySelector(".variant-stock").value)||0}));
  variantRows(list);
 });
-async function loadProducts(){try{let r=await fetch("./products.json",{cache:"no-store"});if(!r.ok)throw Error();products=(await r.json()).map(normalizeProduct);}catch{products=[];$("status").textContent="無法讀取 products.json；可按匯入按鈕載入商品資料。"}render()}
+async function loadProducts(){try{let r=await fetch("./products.json",{cache:"no-store"});if(!r.ok)throw Error();products=(await r.json()).map(normalizeProduct);}catch{products=[];$("status").textContent="無法讀取 products.json；可按匯入按鈕載入商品資料。"}try{const draft=localStorage.getItem("xiangAnProductDraft");if(draft){const parsed=JSON.parse(draft);if(Array.isArray(parsed)){products=parsed.map(normalizeProduct);$("status").textContent="已還原上次尚未下載的商品修改。全部修改完成後，請按「下載更新檔」一次下載。"}}}catch{}render()}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function saveProductDraft(){try{localStorage.setItem("xiangAnProductDraft",JSON.stringify(products));}catch{}}
 function downloadProducts(message="已下載 products.json，請上傳到 GitHub Repository 根目錄並覆蓋舊檔。"){
  const blob=new Blob([JSON.stringify(products,null,2)],{type:"application/json"});
  const url=URL.createObjectURL(blob),a=document.createElement("a");
@@ -99,7 +100,7 @@ $("product-form").addEventListener("submit",e=>{
  const p={id,productCode,name:$("name").value.trim(),price:Number($("price").value),tag:$("tag").value.trim(),desc:$("desc").value.trim(),symbol:$("symbol").value.trim()||"文具",image:$("image").value.trim(),url:$("url").value.trim()||"#",category:"writing",variants};
  if(!p.productCode||!p.name||!Number.isFinite(p.price)||p.price<0){$("status").textContent="請確認商品編號、名稱與價格。";return}
  let i=products.findIndex(x=>Number(x.id)===id);i>=0?products[i]=p:products.push(p);
- reset();render();downloadProducts("商品已儲存並下載 products.json。請將此檔案上傳 GitHub 根目錄並覆蓋舊檔，官網才會更新。");
+ reset();render();saveProductDraft();$("status").textContent="商品已儲存。可繼續新增或修改其他商品，全部完成後再按「下載更新檔」一次下載 products.json。";
 });
 $("product-list").addEventListener("click",e=>{
  let eb=e.target.closest("[data-edit]"),db=e.target.closest("[data-delete]");
@@ -112,16 +113,16 @@ $("product-list").addEventListener("click",e=>{
  if(db){
   let id=Number(db.dataset.delete),p=products.find(x=>Number(x.id)===id);
   if(p&&confirm(`確定刪除「${p.productCode}｜${p.name}」？刪除後請下載 products.json 並上傳 GitHub 才會正式移除。`)){
-   products=products.filter(p=>Number(p.id)!==id);if(Number($("edit-id").value)===id)reset();render();downloadProducts("商品已刪除並下載 products.json。請將此檔案上傳 GitHub 根目錄並覆蓋舊檔，官網才會更新。");
+   products=products.filter(p=>Number(p.id)!==id);if(Number($("edit-id").value)===id)reset();render();saveProductDraft();$("status").textContent="商品已刪除。可繼續修改其他商品，全部完成後再按「下載更新檔」一次下載 products.json。";
   }
  }
 });
 $("cancel-edit").onclick=reset;
-$("download-btn").onclick=()=>downloadProducts();
+$("download-btn").onclick=()=>downloadProducts("已一次下載目前全部商品修改的 products.json。請另存新檔備份，並上傳 GitHub 根目錄覆蓋舊檔。");
 $("import-btn").onclick=()=>$("import-file").click();
 $("import-file").onchange=async e=>{
  let f=e.target.files[0];if(!f)return;
- try{let data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error();products=data.map(normalizeProduct);render();$("status").textContent="匯入成功。舊商品已補上商品編號；尚未設定庫存的規格請編輯後填入庫存。"}
+ try{let data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error();products=data.map(normalizeProduct);render();saveProductDraft();$("status").textContent="匯入成功。可繼續修改，全部完成後再按「下載更新檔」一次下載 products.json。"}
  catch{$("status").textContent="匯入失敗，請選擇正確的 products.json。"}
  e.target.value="";
 };
