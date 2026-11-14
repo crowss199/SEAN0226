@@ -94,3 +94,6 @@ body{background:#fff;color:var(--ink)}
 .notice-board h1{font-size:clamp(20px,2.4vw,28px)!important;line-height:1.4!important;margin:0 0 8px!important;letter-spacing:1px!important}
 .notice-board p{font-size:13px;line-height:1.9;color:#62685e;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:700px){.notice-board-section{padding:22px 5%!important}.notice-board{padding:16px 17px}.notice-board p{font-size:12px}}
+
+.brand-mark.has-site-logo{background-color:#fff;border-color:#dfe3da}
+.brand-mark.has-site-logo{font-size:0}

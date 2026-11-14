@@ -1,14 +1,62 @@
 const $=id=>document.getElementById(id),MALL="#";let products=[];
+
+
+// Upload product image locally and embed it in products.json as a data URL.
+let selectedProductImage="";
+function readImageFile(file,maxBytes=1500000){
+ return new Promise((resolve,reject)=>{
+  if(!file||!file.type.startsWith("image/"))return reject(Error("請選擇圖片檔案。"));
+  if(file.size>maxBytes)return reject(Error("圖片太大，請壓縮至 1.5 MB 以下。"));
+  const reader=new FileReader();
+  reader.onload=()=>resolve(String(reader.result));
+  reader.onerror=()=>reject(Error("圖片讀取失敗。"));
+  reader.readAsDataURL(file);
+ });
+}
+$("image-file").addEventListener("change",async e=>{
+ const file=e.target.files[0];if(!file)return;
+ try{
+  selectedProductImage=await readImageFile(file);
+  $("image").value=selectedProductImage;
+  $("image-preview").hidden=false;
+  $("image-preview").innerHTML=`<img alt="商品圖片預覽" src="${selectedProductImage}">`;
+  $("status").textContent="商品圖片已載入，提交商品後會一併放入 products.json。";
+ }catch(err){$("status").textContent=err.message}
+});
+
 const AUTH_KEY="xiangAnAdminSession";
-function showAdmin(){ $("login-panel").hidden=true;$("admin-app").hidden=false;loadProducts();loadOrders();loadAnnouncementAdmin();}
-function logout(){sessionStorage.removeItem(AUTH_KEY);$("admin-app").hidden=true;$("login-panel").hidden=false;$("password").value="";}
-$("login-form").addEventListener("submit",e=>{e.preventDefault();if($("password").value===window.ADMIN_PASSWORD){sessionStorage.setItem(AUTH_KEY,"yes");$("login-error").textContent="";showAdmin()}else{$("login-error").textContent="密碼不正確，請再試一次。"}});
+function showAdmin(){ $("login-panel").hidden=true;$("admin-app").hidden=false;loadProducts();loadOrders();loadAnnouncementAdmin();loadSiteSettingsAdmin();}
+function logout(){sessionStorage.removeItem(AUTH_KEY);$("admin-app").hidden=true;$("login-panel").hidden=false;$("password").value="";$("admin-id").value="";}
+$("login-form").addEventListener("submit",e=>{
+ e.preventDefault();
+ const configuredId=String(window.ADMIN_ID??"").trim();
+ const configuredPassword=String(window.ADMIN_PASSWORD??"").trim();
+ const enteredId=String($("admin-id").value??"").trim();
+ const enteredPassword=String($("password").value??"").trim();
+ if(!configuredId || !configuredPassword){
+  $("login-error").textContent="管理員 ID 或密碼尚未設定，請檢查 admin-config.js。";
+  return;
+ }
+ if(enteredId===configuredId && enteredPassword===configuredPassword){
+  sessionStorage.setItem(AUTH_KEY,"yes");
+  $("login-error").textContent="";
+  showAdmin();
+ }else{
+  $("login-error").textContent="管理員 ID 或密碼錯誤，請重新確認。";
+ }
+});
+$("toggle-password").addEventListener("click",()=>{
+ const input=$("password"),button=$("toggle-password");
+ const visible=input.type==="text";
+ input.type=visible?"password":"text";
+ button.textContent=visible?"顯示":"隱藏";
+});
 $("logout").addEventListener("click",logout);
 const fields=["name","price","tag","desc","symbol","image","url"];
 async function loadProducts(){try{let r=await fetch("./products.json");if(!r.ok)throw Error();products=await r.json();}catch{products=[];$("status").textContent="無法讀取 products.json；可按匯入按鈕載入商品資料。"}render()}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function render(){$("count").textContent=`（${products.length} 件）`;$ ("product-list").innerHTML=products.length?products.map(p=>`<div class="product-row"><div><strong>${esc(p.name)}</strong><small>NT$ ${Number(p.price).toLocaleString("zh-TW")}　${esc(p.desc||"")}</small></div><div class="row-actions"><button class="light" data-edit="${p.id}">修改</button><button class="delete" data-delete="${p.id}">刪除</button></div></div>`).join(""):'<p class="hint">目前沒有商品，請使用上方表單新增。</p>'}
-function reset(){$("product-form").reset();$("edit-id").value="";$("form-title").textContent="新增商品";$("submit-btn").textContent="＋ 加入商品清單";$("cancel-edit").hidden=true}
+function reset(){$("product-form").reset();selectedProductImage="";$("image-preview").hidden=true;$("image-preview").innerHTML="";$("edit-id").value="";$("form-title").textContent="新增商品";$("submit-btn").textContent="＋ 加入商品清單";$("cancel-edit").hidden=true}
 $("product-form").addEventListener("submit",e=>{e.preventDefault();let id=Number($("edit-id").value)||Math.max(0,...products.map(p=>Number(p.id)||0))+1,p={id,name:$("name").value.trim(),price:Number($("price").value),tag:$("tag").value.trim(),desc:$("desc").value.trim(),symbol:$("symbol").value.trim()||"文具",image:$("image").value.trim(),url:$("url").value.trim()||"#",category:"writing"};if(!p.name||!Number.isFinite(p.price)||p.price<0){$("status").textContent="請確認商品名稱與價格。";return}let i=products.findIndex(x=>Number(x.id)===id);i>=0?products[i]=p:products.push(p);$("status").textContent="商品已更新目前清單；請記得下載更新檔。";reset();render()});
 $("product-list").addEventListener("click",e=>{let eb=e.target.closest("[data-edit]"),db=e.target.closest("[data-delete]");if(eb){let p=products.find(x=>Number(x.id)===Number(eb.dataset.edit));fields.forEach(k=>$(k).value=p[k]??"");$("edit-id").value=p.id;$("form-title").textContent="修改商品";$("submit-btn").textContent="儲存修改";$("cancel-edit").hidden=false;scrollTo({top:0,behavior:"smooth"})}if(db){let id=Number(db.dataset.delete);if(confirm("確定刪除此商品？")){products=products.filter(p=>Number(p.id)!==id);render();$("status").textContent="商品已刪除；請記得下載更新檔。"}}});
 $("cancel-edit").onclick=reset;$("download-btn").onclick=()=>{let blob=new Blob([JSON.stringify(products,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="products.json";a.click();URL.revokeObjectURL(a.href);$("status").textContent="已下載 products.json，請上傳到 GitHub Repository 根目錄並覆蓋舊檔。"};
@@ -39,6 +87,28 @@ $("confirm-import").addEventListener("click",()=>{let old=getOrders(),known=new 
 $("cancel-import").onclick=()=>{$("mapping-area").hidden=true;parsedOrderRows=[];orderHeaders=[]};
 $("export-orders").onclick=()=>{let rows=getOrders(),cols=orderFields.map(f=>f.label),csv=[cols,...rows.map(o=>orderFields.map(f=>o[f.key]??""))].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n"),blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="xiang-an-orders.csv";a.click();URL.revokeObjectURL(a.href)};
 $("clear-orders").onclick=()=>{if(confirm("確定清空這台裝置瀏覽器內的所有匯入訂單？此操作無法復原。")){saveOrders([]);renderOrders()}};
+
+// Website logo uploader; exported as site-settings.json.
+let siteSettings={logo:""};
+async function loadSiteSettingsAdmin(){
+ try{const r=await fetch("./site-settings.json",{cache:"no-store"});if(r.ok)siteSettings=await r.json()}catch{}
+ if(siteSettings.logo){$("logo-preview").hidden=false;$("logo-preview").innerHTML=`<img alt="目前官網商標" src="${siteSettings.logo}">`;}
+}
+$("logo-file").addEventListener("change",async e=>{
+ const file=e.target.files[0];if(!file)return;
+ try{
+  siteSettings.logo=await readImageFile(file,2000000);
+  $("logo-preview").hidden=false;
+  $("logo-preview").innerHTML=`<img alt="商標預覽" src="${siteSettings.logo}">`;
+  $("logo-status").textContent="商標已載入，請下載設定檔並上傳 GitHub。";
+ }catch(err){$("logo-status").textContent=err.message}
+});
+$("logo-download").addEventListener("click",()=>{
+ const blob=new Blob([JSON.stringify(siteSettings,null,2)],{type:"application/json;charset=utf-8"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="site-settings.json";a.click();URL.revokeObjectURL(a.href);
+ $("logo-status").textContent="已下載 site-settings.json，請上傳至 GitHub Repository 根目錄。";
+});
+
 if(sessionStorage.getItem(AUTH_KEY)==="yes")showAdmin();
 
 // Homepage announcement editor

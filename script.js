@@ -33,7 +33,7 @@ $("checkout-form").addEventListener("submit",async e=>{
 
 // 7-ELEVEN official store map: open separately; user copies the selected store ID back.
 $("open-store-map").addEventListener("click",()=>{
- window.open("https://emap.pcsc.com.tw/ecmap/default.aspx","_blank","noopener");
+ window.open("https://emap.pcsc.com.tw/","_blank","noopener");
 });
 $("store-id").addEventListener("input",e=>{
  e.target.value=e.target.value.replace(/\D/g,"").slice(0,6);
@@ -54,3 +54,22 @@ async function loadAnnouncement(){
  }catch(err){console.warn("公告資料讀取失敗",err)}
 }
 loadAnnouncement();
+
+async function loadSiteSettings(){
+ try{
+  const r=await fetch("./site-settings.json",{cache:"no-store"});
+  if(!r.ok)return;
+  const settings=await r.json();
+  if(settings.logo){
+   document.querySelectorAll(".site-logo-mark").forEach(el=>{
+    el.textContent="";
+    el.style.backgroundImage=`url("${settings.logo}")`;
+    el.style.backgroundSize="contain";
+    el.style.backgroundPosition="center";
+    el.style.backgroundRepeat="no-repeat";
+    el.classList.add("has-site-logo");
+   });
+  }
+ }catch(err){console.warn("網站設定讀取失敗",err)}
+}
+loadSiteSettings();

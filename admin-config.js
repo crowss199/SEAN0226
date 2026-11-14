@@ -1,2 +1,4 @@
-// 請在部署前修改下方管理密碼。這是前端簡易密碼鎖，不能抵擋檢視原始碼的人。
-window.ADMIN_PASSWORD = "12345";
+// 翔安富文具管理員登入設定
+// 注意：GitHub Pages 是公開靜態網站，這些設定可被查看，不適合真正保密。
+window.ADMIN_ID = "crowss199";
+window.ADMIN_PASSWORD = "Cc@0137877";
