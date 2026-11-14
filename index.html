@@ -3,110 +3,83 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="翔安富文具｜簡約選物購物網站">
-  <title>翔安富文具｜官方購物網站</title>
+  <meta name="description" content="翔安富文具官方網站｜精選文具與日常用品，前往 iOPEN Mall 安心選購。">
+  <meta name="theme-color" content="#171717">
+  <title>翔安富文具｜官方網站</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body id="top">
   <header class="site-header">
-    <a class="brand" href="#" aria-label="翔安富文具首頁">
+    <a class="brand" href="#top" aria-label="翔安富文具首頁">
       <span class="brand-mark">翔</span>
       <span><strong>翔安富文具</strong><small>OFFICIAL STORE</small></span>
     </a>
-    <nav class="desktop-nav">
-      <a href="#products">所有商品</a>
+    <nav class="desktop-nav" aria-label="主要導覽">
+      <a href="#products">精選商品</a>
       <a href="#about">品牌介紹</a>
-      <a href="#order-info">購物須知</a>
+      <a href="#shopping">購物說明</a>
     </nav>
-    <button class="cart-trigger" id="open-cart" aria-label="開啟購物車">
-      購物車 <span class="cart-count" id="cart-count">0</span>
-    </button>
+    <div class="header-actions"><button class="cart-trigger" id="open-cart" aria-label="開啟選購清單">選購清單 <span class="cart-count" id="cart-count">0</span></button><a class="header-shop-link" href="https://mall.iopenmall.tw/011553/" target="_blank" rel="noopener noreferrer">iOPEN Mall ↗</a></div>
   </header>
 
   <main>
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">WELCOME TO OUR STORE</p>
-        <h1>簡單挑選，<br>安心購物。</h1>
-        <p class="hero-description">用心挑選每一件商品，讓日常生活多一點美好。</p>
-        <a class="button button-dark" href="#products">開始選購 <span>→</span></a>
+        <p class="eyebrow">WELCOME TO XIANG AN</p>
+        <h1>好用的文具，<br>讓日常更有靈感。</h1>
+        <p class="hero-description">歡迎來到翔安富文具官方網站。瀏覽精選文具與人氣商品，最新庫存、規格及優惠請以 iOPEN Mall 賣場資訊為準。</p>
+        <a class="button button-dark" href="https://mall.iopenmall.tw/011553/" target="_blank" rel="noopener noreferrer">前往官方賣場 <span>→</span></a>
       </div>
-      <div class="hero-art" aria-label="品牌形象視覺">
-        <div class="hero-art-inner">
-          <span class="hero-kanji">翔</span>
-          <span class="hero-art-caption">XIANG AN<br>SELECTED GOODS</span>
-        </div>
+      <div class="hero-art" aria-label="翔安富文具品牌形象">
+        <div class="hero-art-inner"><span class="hero-kanji">翔</span><span class="hero-art-caption">XIANG AN<br>STATIONERY & SELECTED GOODS</span></div>
       </div>
     </section>
 
     <section class="section products-section" id="products">
       <div class="section-heading">
-        <div><p class="eyebrow">OUR COLLECTION</p><h2>精選商品</h2></div>
-        <p>挑選喜歡的商品，加入購物車即可送出訂單。</p>
+        <div><p class="eyebrow">STORE HIGHLIGHTS</p><h2>賣場精選</h2></div>
+        <p>以下為賣場商品精選，價格、規格與庫存請以 iOPEN Mall 即時頁面為準。</p>
       </div>
       <div class="product-grid" id="product-grid"></div>
+      <div class="all-products"><a class="button button-dark" href="https://mall.iopenmall.tw/011553/" target="_blank" rel="noopener noreferrer">瀏覽 iOPEN Mall 全館商品 <span>↗</span></a></div>
     </section>
 
     <section class="about-section" id="about">
-      <div class="about-symbol">翔安<br>富文賜</div>
-      <div><p class="eyebrow">ABOUT US</p><h2>用心選品，<br>讓每一次購物都簡單。</h2>
-      <p>歡迎來到翔安富文具官方購物網站。本網站提供商品瀏覽、購物車及訂單送出功能。商品內容與價格可依實際販售需求自行修改。</p></div>
+      <div class="about-symbol">翔安<br>富文具</div>
+      <div><p class="eyebrow">ABOUT US</p><h2>用心選品，<br>讓每一次書寫都更順手。</h2>
+      <p>歡迎來到翔安富文具官方網站。本站提供品牌介紹與商品導覽；實際商品下單、付款、配送、退換貨及訂單查詢，皆由翔安富文具 iOPEN Mall 官方賣場提供服務。</p>
+      <a class="inline-link" href="https://mall.iopenmall.tw/011553/" target="_blank" rel="noopener noreferrer">造訪翔安富文具 iOPEN Mall →</a></div>
     </section>
 
-    <section class="section info-section" id="order-info">
-      <p class="eyebrow">SHOPPING INFORMATION</p><h2>購物須知</h2>
+    <section class="section info-section" id="shopping">
+      <p class="eyebrow">SHOPPING INFORMATION</p><h2>購物說明</h2>
       <div class="info-grid">
-        <article><span>01</span><h3>選購商品</h3><p>將想購買的商品加入購物車，並確認數量及金額。</p></article>
-        <article><span>02</span><h3>填寫資料</h3><p>結帳時填寫姓名、電話及收件資訊，送出訂單。</p></article>
-        <article><span>03</span><h3>確認訂單</h3><p>目前為訂單需求收集版本，送出後請依頁面提示聯繫商家確認。</p></article>
+        <article><span>01</span><h3>瀏覽商品</h3><p>在官網認識精選商品，點選商品卡片即可前往 iOPEN Mall 查看商品詳情。</p></article>
+        <article><span>02</span><h3>平台下單</h3><p>請在 iOPEN Mall 官方賣場將商品加入購物車，確認規格、價格及配送方式後完成結帳。</p></article>
+        <article><span>03</span><h3>訂單與配送</h3><p>付款、訂單狀態、出貨及售後服務，請依 iOPEN Mall 平台及賣場公告辦理。</p></article>
       </div>
+      <p class="shopping-note">提醒：本官網的「選購清單」僅供瀏覽時暫存商品，不會自動同步至 iOPEN Mall 購物車；請前往賣場重新加入欲購買的商品。商品價格及庫存可能變動，請以賣場頁面為準。</p>
+      <div class="shopping-cta"><a class="button button-dark" href="https://mall.iopenmall.tw/011553/" target="_blank" rel="noopener noreferrer">立即前往 iOPEN Mall 購物 <span>↗</span></a></div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <a class="brand footer-brand" href="#"><span class="brand-mark">翔</span><span><strong>翔安富文具</strong><small>OFFICIAL STORE</small></span></a>
+    <a class="brand footer-brand" href="#top"><span class="brand-mark">翔</span><span><strong>翔安富文具</strong><small>OFFICIAL STORE</small></span></a>
     <p>© <span id="year"></span> 翔安富文具. All rights reserved.</p>
-    <a href="#top">回到頁首 ↑</a>
+    <a href="https://mall.iopenmall.tw/011553/" target="_blank" rel="noopener noreferrer">iOPEN Mall 官方賣場 ↗</a>
   </footer>
 
   <div class="overlay" id="overlay"></div>
-  <aside class="cart-drawer" id="cart-drawer" aria-label="購物車">
-    <div class="drawer-header"><div><p class="eyebrow">YOUR SELECTION</p><h2>購物車</h2></div><button class="icon-button" id="close-cart" aria-label="關閉">×</button></div>
+  <aside class="cart-drawer" id="cart-drawer" aria-label="選購清單">
+    <div class="drawer-header"><div><p class="eyebrow">YOUR SHORTLIST</p><h2>選購清單</h2></div><button class="icon-button" id="close-cart" aria-label="關閉">×</button></div>
     <div class="cart-items" id="cart-items"></div>
     <div class="cart-bottom">
-      <div class="total-row"><span>商品小計</span><strong id="cart-total">NT$ 0</strong></div>
-      <button class="button button-dark full-width" id="checkout-button">前往填寫訂單</button>
-      <p class="small-note">目前不收取線上款項，送出的是訂單需求。</p>
+      <div class="total-row"><span>清單商品參考小計</span><strong id="cart-total">NT$ 0</strong></div>
+      <a class="button button-dark full-width mall-checkout" href="https://mall.iopenmall.tw/011553/" target="_blank" rel="noopener noreferrer">前往 iOPEN Mall 購物 ↗</a>
+      <p class="small-note">此清單不會傳送至 iOPEN Mall。前往賣場後，請重新選擇商品、規格及數量；實際售價以賣場為準。</p>
     </div>
   </aside>
 
-  <div class="modal-backdrop" id="checkout-modal">
-    <section class="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
-      <div class="drawer-header"><div><p class="eyebrow">ORDER DETAILS</p><h2 id="checkout-title">填寫訂單資料</h2></div><button class="icon-button" id="close-checkout" aria-label="關閉">×</button></div>
-      <form id="checkout-form">
-        <div class="form-grid">
-          <label>姓名<input name="name" required autocomplete="name" placeholder="請輸入收件人姓名"></label>
-          <label>聯絡電話<input name="phone" required type="tel" autocomplete="tel" placeholder="請輸入聯絡電話"></label>
-          <label class="wide">收件地址<input name="address" required autocomplete="street-address" placeholder="請輸入完整收件地址"></label>
-          <label class="wide">備註<textarea name="note" rows="3" placeholder="商品、配送或其他需求（選填）"></textarea></label>
-        </div>
-        <div class="checkout-summary"><div class="total-row"><span>訂單總額</span><strong id="checkout-total">NT$ 0</strong></div></div>
-        <label class="wide consent-label"><input type="checkbox" name="consent" required> 我同意將本次訂單中的姓名、電話、收件地址及商品資料透過第三方表單服務寄送給翔安富文具。</label>
-        <button class="button button-dark full-width" id="submit-order" type="submit">確認送出訂單</button>
-        <p class="small-note">送出後，訂單資料會透過 FormSubmit 寄到店家信箱。請勿填寫與訂單無關的敏感個人資料。</p>
-      </form>
-    </section>
-  </div>
-
-  <div class="success-modal modal-backdrop" id="success-modal">
-    <section class="success-card" role="dialog" aria-modal="true">
-      <div class="success-check">✓</div><p class="eyebrow">ORDER CREATED</p><h2>訂單內容已產生</h2>
-      <p id="order-status">訂單已成功寄出至店家信箱，請等待商家與您聯繫確認。</p>
-      <pre id="order-output"></pre>
-      <button class="button button-dark full-width" id="copy-order">複製訂單內容</button>
-      <button class="text-button" id="finish-order">完成</button>
-    </section>
-  </div>
   <script src="script.js"></script>
 </body>
 </html>
