@@ -21,20 +21,7 @@
    <form id="checkout-form" class="checkout-form">
     <label>取件人姓名（2–10字）<input name="recipient" required minlength="2" maxlength="10" autocomplete="name"></label>
     <label>取件人手機（10碼）<input name="phone" required inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel"></label>
-    <div class="store-picker-field">
-     <div class="store-search-wrap">
-      <label for="store-search">搜尋 7-ELEVEN 門市（全台灣）</label>
-      <input class="store-search-input" id="store-search" type="search" autocomplete="off" placeholder="輸入門市名稱或六碼門市編號">
-      <p class="store-search-status" id="store-search-status" role="status" aria-live="polite">正在載入全台門市資料…</p>
-      <div class="store-search-results" id="store-search-results"></div>
-      <div class="store-selected" id="store-selected" hidden></div>
-     </div>
-     <label>取件門市店號（6碼）<input name="storeId" id="store-id" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="請從上方搜尋並選擇門市"></label>
-     <label>門市名稱<input name="storeName" id="store-name" required maxlength="50" placeholder="選擇門市後自動帶入"></label>
-     <label>門市地址（選填）<input name="storeAddress" id="store-address" maxlength="120" placeholder="選擇門市後自動帶入"></label>
-     <button type="button" class="store-map-button" id="open-store-map">開啟 7-ELEVEN 官方門市地圖</button>
-     <p class="store-hint">請在上方搜尋結果中點選正確門市。若查無資料，可使用官方地圖查詢，再回來輸入門市編號與名稱。</p>
-    </div>
+    <label>取件門市店號（6碼）<input name="storeId" id="store-id" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="請輸入6碼店號"></label>
     <label>配送溫層<select name="temperature"><option value="常溫">常溫</option><option value="冷凍">冷凍</option></select></label>
     <label>運費金額（元）<input name="shippingFee" type="number" min="0" max="100" value="38" required></label>
     <label>商品備註<textarea name="note" maxlength="200" rows="3"></textarea></label>
