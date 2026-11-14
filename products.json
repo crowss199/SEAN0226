@@ -1,59 +1,5 @@
 [
   {
-    "id": 1,
-    "name": "三菱鉛筆 UNI HI-UNI GRCT 自動鉛筆筆芯",
-    "desc": "0.3mm／0.5mm｜細緻書寫",
-    "price": 75,
-    "tag": "人氣選物",
-    "symbol": "UNI",
-    "image": "",
-    "url": "",
-    "category": "writing",
-    "productCode": "P0001",
-    "variants": [
-      {
-        "name": "一般規格",
-        "stock": null
-      }
-    ]
-  },
-  {
-    "id": 2,
-    "name": "KOKUYO Campus Junior Pencil 自動鉛筆",
-    "desc": "六角軸｜0.9mm／1.3mm",
-    "price": 45,
-    "tag": "KOKUYO",
-    "symbol": "K",
-    "image": "",
-    "url": "",
-    "category": "writing",
-    "productCode": "P0002",
-    "variants": [
-      {
-        "name": "一般規格",
-        "stock": null
-      }
-    ]
-  },
-  {
-    "id": 3,
-    "name": "三菱 Jetstream EDGE 原子筆筆芯",
-    "desc": "SXR-203-28｜0.28mm",
-    "price": 50,
-    "tag": "順手書寫",
-    "symbol": "JET",
-    "image": "",
-    "url": "",
-    "category": "writing",
-    "productCode": "P0003",
-    "variants": [
-      {
-        "name": "一般規格",
-        "stock": null
-      }
-    ]
-  },
-  {
     "id": 4,
     "productCode": "P0004",
     "name": "三菱 2.0mm 筆芯專用削鉛筆機",
