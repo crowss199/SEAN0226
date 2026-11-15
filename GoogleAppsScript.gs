@@ -9,14 +9,17 @@ function setup() {
   ensureEmailColumn_(sh);
   ensureMailStatusColumn_(sh);
   ensureShipmentStatusColumn_(sh);
-  // 讓手機欄固定為純文字，避免 09 開頭被試算表轉成數字。
+  ensureTrackingNumberColumn_(sh);
+  // 手機與寄件編號固定為純文字，保留開頭的 0 及英數字格式。
   const phoneCol = HEADERS.indexOf("取件人手機") + 1;
   if (sh.getLastRow() >= 1) sh.getRange(1, phoneCol, Math.max(sh.getLastRow(), 1), 1).setNumberFormat("@");
+  const trackingCol = getHeaderColumn_(sh, "寄件編號");
+  if (sh.getLastRow() >= 1 && trackingCol > 0) sh.getRange(1, trackingCol, sh.getLastRow(), 1).setNumberFormat("@");
   // 觸發郵件授權提示；請由試算表擁有者手動執行 setup() 完成授權。
   MailApp.getRemainingDailyQuota();
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === "onEdit").forEach(t => ScriptApp.deleteTrigger(t));
   if (sh.getLastRow() === 0) {
-    sh.appendRow(HEADERS.concat(["出貨通知狀態"]));
+    sh.appendRow(HEADERS.concat(["出貨通知狀態", "寄件編號"]));
     sh.setFrozenRows(1);
   } else {
     // 確保既有試算表欄位順序與新版一致，不覆寫訂單資料。
@@ -60,6 +63,22 @@ function ensureShipmentStatusColumn_(sh) {
   sh.getRange(1, sh.getLastColumn()).setValue("出貨通知狀態");
 }
 
+// 新增寄件編號欄，供出貨通知記錄使用；既有訂單資料不會被覆寫。
+function ensureTrackingNumberColumn_(sh) {
+  if (sh.getLastRow() === 0) return;
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
+  if (headers.includes("寄件編號")) return;
+  sh.insertColumnAfter(sh.getLastColumn());
+  sh.getRange(1, sh.getLastColumn()).setValue("寄件編號");
+  sh.getRange(1, sh.getLastColumn(), Math.max(sh.getLastRow(), 1), 1).setNumberFormat("@");
+}
+
+function getHeaderColumn_(sh, headerName) {
+  if (sh.getLastColumn() < 1) return 0;
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
+  return headers.indexOf(headerName) + 1;
+}
+
 function onOpen() {
   SpreadsheetApp.getUi().createMenu("翔安富文具")
     .addItem("通知目前選取訂單已出貨", "sendShipmentNotificationForSelectedRow")
@@ -83,8 +102,8 @@ function sendShipmentNotificationForSelectedRow() {
   }
   const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
   const col = name => headers.indexOf(name) + 1;
-  const emailCol=col("電子郵件"), orderCol=col("訂單編號"), recipientCol=col("取件人姓名"), storeCol=col("取件門市店號"), statusCol=col("出貨通知狀態"), orderStatusCol=col("訂單狀態");
-  if ([emailCol,orderCol,statusCol].some(v => v < 1)) { SpreadsheetApp.getUi().alert("找不到必要欄位，請先執行 setup()。"); return; }
+  const emailCol=col("電子郵件"), orderCol=col("訂單編號"), recipientCol=col("取件人姓名"), storeCol=col("取件門市店號"), statusCol=col("出貨通知狀態"), trackingCol=col("寄件編號"), orderStatusCol=col("訂單狀態");
+  if ([emailCol,orderCol,statusCol,trackingCol].some(v => v < 1)) { SpreadsheetApp.getUi().alert("找不到必要欄位，請先執行 setup() 新增出貨通知與寄件編號欄位。"); return; }
   const email=String(sh.getRange(row,emailCol).getDisplayValue()).trim();
   const orderId=String(sh.getRange(row,orderCol).getDisplayValue()).trim();
   const previous=String(sh.getRange(row,statusCol).getDisplayValue()).trim();
@@ -105,6 +124,17 @@ function sendShipmentNotificationForSelectedRow() {
     const answer = SpreadsheetApp.getUi().alert("此訂單已寄送過出貨通知。是否仍要再次寄送？", SpreadsheetApp.getUi().ButtonSet.YES_NO);
     if (answer !== SpreadsheetApp.getUi().Button.YES) return;
   }
+  const ui = SpreadsheetApp.getUi();
+  const trackingPrompt = ui.prompt("輸入寄件編號", "請手動輸入本筆訂單的寄件編號，內容會顯示在出貨通知 Email 中。", ui.ButtonSet.OK_CANCEL);
+  if (trackingPrompt.getSelectedButton() !== ui.Button.OK) return;
+  const trackingNumber = String(trackingPrompt.getResponseText() || "").trim();
+  if (!trackingNumber) {
+    ui.alert("寄件編號不可空白，尚未寄出通知。");
+    return;
+  }
+  // 先以純文字保存，避免寄件編號開頭的 0 遺失。
+  sh.getRange(row, trackingCol).setNumberFormat("@");
+  sh.getRange(row, trackingCol).setValue(trackingNumber);
   if (orderStatusCol > 0) sh.getRange(row,orderStatusCol).setValue("已出貨");
   try {
     const recipient = recipientCol>0 ? String(sh.getRange(row,recipientCol).getDisplayValue() || "").trim() : "顧客";
@@ -115,7 +145,8 @@ function sendShipmentNotificationForSelectedRow() {
       "訂單編號：" + orderId + "\n" +
       "取件門市名稱：" + displayStoreName + "\n" +
       "取件門市編號：" + displayStoreId + "\n" +
-      "取件門市地址：" + displayStoreAddress + "\n\n" +
+      "取件門市地址：" + displayStoreAddress + "\n" +
+      "寄件編號：" + trackingNumber + "\n\n" +
       "請留意物流及到店通知。\n翔安富文具";
     const htmlBody = '<div style="font-family:Arial,Microsoft JhengHei,sans-serif;line-height:1.8;color:#222;max-width:620px">' +
       '<h2 style="font-size:20px">您的訂單已出貨</h2>' +
@@ -125,10 +156,11 @@ function sendShipmentNotificationForSelectedRow() {
       '<p><strong>取件門市名稱：</strong>' + escapeShipmentHtml_(displayStoreName) + '</p>' +
       '<p><strong>取件門市編號：</strong>' + escapeShipmentHtml_(displayStoreId) + '</p>' +
       '<p><strong>取件門市地址：</strong>' + escapeShipmentHtml_(displayStoreAddress) + '</p>' +
+      '<p><strong>寄件編號：</strong>' + escapeShipmentHtml_(trackingNumber) + '</p>' +
       '</div><p>請留意物流及到店通知。</p><p>翔安富文具</p></div>';
     MailApp.sendEmail({to:email,subject:"翔安富文具｜您的訂單已出貨 " + orderId,body:body,htmlBody:htmlBody});
-    sh.getRange(row,statusCol).setValue("已寄送 " + new Date().toLocaleString("zh-TW"));
-    SpreadsheetApp.getUi().alert("出貨通知已寄送至：" + email);
+    sh.getRange(row,statusCol).setValue("已寄送 " + new Date().toLocaleString("zh-TW") + "｜寄件編號：" + trackingNumber);
+    ui.alert("出貨通知已寄送至：" + email + "\n寄件編號：" + trackingNumber);
   } catch(err) {
     sh.getRange(row,statusCol).setValue("寄送失敗：" + String(err.message || err).slice(0,120));
     SpreadsheetApp.getUi().alert("寄送失敗：" + String(err.message || err));
