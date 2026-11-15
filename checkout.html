@@ -30,9 +30,9 @@
       <div class="store-search-results" id="store-search-results"></div>
       <div class="store-selected" id="store-selected" hidden></div>
      </div>
+     <label>取件門市名稱<input name="storeName" id="store-name" type="text" readonly placeholder="搜尋並選擇門市後自動帶入"></label>
      <label>取件門市店號（6碼）<input name="storeId" id="store-id" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="請從上方搜尋並選擇門市"></label>
-     <input type="hidden" name="storeName" id="store-name">
-     <input type="hidden" name="storeAddress" id="store-address">
+     <label>取件門市地址<input name="storeAddress" id="store-address" type="text" readonly placeholder="搜尋並選擇門市後自動帶入"></label>
     </div>
     <label>配送溫層<select name="temperature"><option value="常溫">常溫</option><option value="冷凍">冷凍</option></select></label>
     <label>運費金額（元）<input name="shippingFee" type="number" min="0" max="100" value="38" required></label>

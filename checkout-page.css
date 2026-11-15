@@ -13,3 +13,6 @@
 .store-result .store-code{white-space:nowrap;font-size:13px;font-weight:700;letter-spacing:.04em}
 .store-selected{padding:10px 12px;border:1px solid #aaa;border-radius:8px;background:#f7f7f4;font-size:13px;line-height:1.7}
 .store-selected strong{display:block}
+
+/* 門市查詢後自動帶入的名稱與地址欄位 */
+.checkout-form input[readonly]{background:#f3f4f0;color:#4b5148;border-color:#dfe3da;cursor:default}
