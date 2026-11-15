@@ -1,5 +1,5 @@
 const SHEET_NAME = "官網訂單";
-const HEADERS = ["訂單編號","下單時間","取件人姓名","取件人手機","電子郵件","取件門市店號","溫層","商品","商品金額","運費金額","備註","其他資訊","訂單狀態"];
+const HEADERS = ["訂單編號","下單時間","取件人姓名","取件人手機","電子郵件","郵件通知狀態","取件門市店號","溫層","商品","商品金額","運費金額","備註","其他資訊","訂單狀態"];
 
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -7,10 +7,16 @@ function setup() {
   if (!sh) sh = ss.insertSheet(SHEET_NAME);
   removeStoreNameAddressColumns_(sh);
   ensureEmailColumn_(sh);
-  const hasEditTrigger = ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === "onEdit");
-  if (!hasEditTrigger) ScriptApp.newTrigger("onEdit").forSpreadsheet(ss).onEdit().create();
+  ensureMailStatusColumn_(sh);
+  ensureShipmentStatusColumn_(sh);
+  // 讓手機欄固定為純文字，避免 09 開頭被試算表轉成數字。
+  const phoneCol = HEADERS.indexOf("取件人手機") + 1;
+  if (sh.getLastRow() >= 1) sh.getRange(1, phoneCol, Math.max(sh.getLastRow(), 1), 1).setNumberFormat("@");
+  // 觸發郵件授權提示；請由試算表擁有者手動執行 setup() 完成授權。
+  MailApp.getRemainingDailyQuota();
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === "onEdit").forEach(t => ScriptApp.deleteTrigger(t));
   if (sh.getLastRow() === 0) {
-    sh.appendRow(HEADERS);
+    sh.appendRow(HEADERS.concat(["出貨通知狀態"]));
     sh.setFrozenRows(1);
   } else {
     // 確保既有試算表欄位順序與新版一致，不覆寫訂單資料。
@@ -31,6 +37,74 @@ function ensureEmailColumn_(sh) {
   if (phoneIndex < 0) throw Error("找不到取件人手機欄位，請確認標題列");
   sh.insertColumnAfter(phoneIndex + 1);
   sh.getRange(1, phoneIndex + 2).setValue("電子郵件");
+}
+
+
+// 在電子郵件欄後新增郵件通知狀態欄，保留既有訂單資料。
+function ensureMailStatusColumn_(sh) {
+  if (sh.getLastRow() === 0) return;
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
+  if (headers.includes("郵件通知狀態")) return;
+  const emailIndex = headers.indexOf("電子郵件");
+  if (emailIndex < 0) throw Error("找不到電子郵件欄位");
+  sh.insertColumnAfter(emailIndex + 1);
+  sh.getRange(1, emailIndex + 2).setValue("郵件通知狀態");
+}
+
+// 新增獨立出貨通知狀態欄，避免與訂單成立通知混淆。
+function ensureShipmentStatusColumn_(sh) {
+  if (sh.getLastRow() === 0) return;
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
+  if (headers.includes("出貨通知狀態")) return;
+  sh.insertColumnAfter(sh.getLastColumn());
+  sh.getRange(1, sh.getLastColumn()).setValue("出貨通知狀態");
+}
+
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu("翔安富文具")
+    .addItem("通知目前選取訂單已出貨", "sendShipmentNotificationForSelectedRow")
+    .addToUi();
+}
+
+// 在「官網訂單」工作表選取一筆訂單資料列，再從上方選單按出貨通知。
+function sendShipmentNotificationForSelectedRow() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const row = sh.getActiveRange() ? sh.getActiveRange().getRow() : 0;
+  if (sh.getName() !== SHEET_NAME || row < 2) {
+    SpreadsheetApp.getUi().alert("請先到「官網訂單」工作表，點選要通知的訂單資料列。");
+    return;
+  }
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
+  const col = name => headers.indexOf(name) + 1;
+  const emailCol=col("電子郵件"), orderCol=col("訂單編號"), recipientCol=col("取件人姓名"), storeCol=col("取件門市店號"), statusCol=col("出貨通知狀態"), orderStatusCol=col("訂單狀態");
+  if ([emailCol,orderCol,statusCol].some(v => v < 1)) { SpreadsheetApp.getUi().alert("找不到必要欄位，請先執行 setup()。"); return; }
+  const email=String(sh.getRange(row,emailCol).getDisplayValue()).trim();
+  const orderId=String(sh.getRange(row,orderCol).getDisplayValue()).trim();
+  const previous=String(sh.getRange(row,statusCol).getDisplayValue()).trim();
+  const infoCol=col("其他資訊");
+  let extraInfo={};
+  if(infoCol>0){
+    const rawInfo=String(sh.getRange(row,infoCol).getDisplayValue()||"").trim();
+    try{extraInfo=rawInfo?JSON.parse(rawInfo):{};}catch(_){extraInfo={};}
+  }
+  const storeId=storeCol>0?String(sh.getRange(row,storeCol).getDisplayValue()||"").trim():"";
+  const storeName=String(extraInfo.storeName||"").trim();
+  const storeAddress=String(extraInfo.storeAddress||"").trim();
+  if (!email || !orderId) { SpreadsheetApp.getUi().alert("此訂單缺少電子郵件或訂單編號，無法寄送。"); return; }
+  if (previous.indexOf("已寄送") === 0) {
+    const answer = SpreadsheetApp.getUi().alert("此訂單已寄送過出貨通知。是否仍要再次寄送？", SpreadsheetApp.getUi().ButtonSet.YES_NO);
+    if (answer !== SpreadsheetApp.getUi().Button.YES) return;
+  }
+  if (orderStatusCol > 0) sh.getRange(row,orderStatusCol).setValue("已出貨");
+  try {
+    const body="您好 " + (sh.getRange(row,recipientCol).getDisplayValue() || "") + "，您的訂單已出貨。\n\n訂單編號：" + orderId + "\n取件門市名稱：" + (storeName || "（訂單未保存門市名稱）") + "\n取件門市編號：" + (storeId || "（無資料）") + "\n取件門市地址：" + (storeAddress || "（訂單未保存門市地址）") + "\n\n請留意物流及到店通知。\n翔安富文具";
+    MailApp.sendEmail({to:email,subject:"翔安富文具｜您的訂單已出貨 " + orderId,body:body});
+    sh.getRange(row,statusCol).setValue("已寄送 " + new Date().toLocaleString("zh-TW"));
+    SpreadsheetApp.getUi().alert("出貨通知已寄送至：" + email);
+  } catch(err) {
+    sh.getRange(row,statusCol).setValue("寄送失敗：" + String(err.message || err).slice(0,120));
+    SpreadsheetApp.getUi().alert("寄送失敗：" + String(err.message || err));
+  }
 }
 
 // 自動移除舊版試算表中的「門市名稱」與「門市地址」欄，保留「取件門市店號」。
@@ -58,25 +132,38 @@ function doPost(e) {
     if (!sh) throw Error("找不到官網訂單工作表，請先執行 setup()");
     removeStoreNameAddressColumns_(sh);
     ensureEmailColumn_(sh);
+    ensureMailStatusColumn_(sh);
+    ensureShipmentStatusColumn_(sh);
 
     const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getDisplayValues().flat() : [];
     if (ids.includes(String(d.orderId))) throw Error("重複訂單");
     const goods = d.items.map(i => `${i.name}x${i.quantity}`).join("、");
 
     // 門市只記錄六碼店號，不再寫入門市名稱及地址。
-    sh.appendRow([
+    // 先將手機欄設為純文字，再寫入完整字串，保留開頭的 0。
+    const newRow = sh.getLastRow() + 1;
+    const phoneCol = HEADERS.indexOf("取件人手機") + 1;
+    sh.getRange(newRow, phoneCol).setNumberFormat("@");
+    sh.getRange(newRow, 1, 1, HEADERS.length).setValues([[
       String(d.orderId), new Date(d.createdAt || Date.now()), String(d.recipient),
-      String(d.phone), String(d.email), String(d.storeId), String(d.temperature), goods,
+      String(d.phone), String(d.email), "待寄送", String(d.storeId), String(d.temperature), goods,
       Number(d.productAmount), Number(d.shippingFee), String(d.note || ""),
-      String(d.social || ""), "新訂單"
-    ]);
+      JSON.stringify({social:String(d.social || ""),storeName:String(d.storeName || ""),storeAddress:String(d.storeAddress || "")}), "新訂單"
+    ]]);
+    let mailStatus = "寄送失敗";
     try {
       MailApp.sendEmail({
-        to: String(d.email),
+        to: String(d.email).trim(),
         subject: "翔安富文具｜訂單成立通知 " + String(d.orderId),
         body: "您好，您的訂單已成立。\n訂單編號：" + d.orderId + "\n商品：" + goods + "\n商品金額：NT$" + d.productAmount + "\n運費：NT$" + d.shippingFee + "\n應付金額：NT$" + d.totalAmount + "\n取件門市店號：" + d.storeId + "\n我們將於出貨狀態更新時再寄送通知。\n翔安富文具"
       });
-    } catch (mailErr) { console.error("訂單成立郵件寄送失敗", mailErr); }
+      mailStatus = "已提交寄送";
+    } catch (mailErr) {
+      mailStatus = "寄送失敗：" + String(mailErr.message || mailErr).slice(0, 180);
+      console.error("訂單成立郵件寄送失敗", mailErr);
+    }
+    const mailStatusCol = HEADERS.indexOf("郵件通知狀態") + 1;
+    sh.getRange(newRow, mailStatusCol).setValue(mailStatus);
     return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ok:false,error:String(err)})).setMimeType(ContentService.MimeType.JSON);
@@ -113,25 +200,4 @@ function doGet(e) {
 }
 
 
-// 管理員將「訂單狀態」改為「已出貨」時，自動寄送出貨通知。
-function onEdit(e) {
-  try {
-    const sh = e.range.getSheet();
-    if (sh.getName() !== SHEET_NAME || e.range.getRow() < 2) return;
-    const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
-    const statusCol = headers.indexOf("訂單狀態") + 1;
-    if (!statusCol || e.range.getColumn() !== statusCol || String(e.value || "").trim() !== "已出貨") return;
-    const row = e.range.getRow();
-    const emailCol = headers.indexOf("電子郵件") + 1;
-    const orderCol = headers.indexOf("訂單編號") + 1;
-    const recipientCol = headers.indexOf("取件人姓名") + 1;
-    const storeCol = headers.indexOf("取件門市店號") + 1;
-    if (!emailCol || !orderCol) return;
-    const email = String(sh.getRange(row, emailCol).getDisplayValue()).trim();
-    if (!email) return;
-    MailApp.sendEmail({
-      to: email, subject: "翔安富文具｜您的訂單已出貨",
-      body: "您好 " + (sh.getRange(row, recipientCol).getDisplayValue() || "") + "，您的訂單已出貨。\n訂單編號：" + sh.getRange(row, orderCol).getDisplayValue() + "\n取件門市店號：" + sh.getRange(row, storeCol).getDisplayValue() + "\n請留意物流及到店通知。\n翔安富文具"
-    });
-  } catch (err) { console.error("出貨通知寄送失敗", err); }
-}
+// 出貨通知改為手動按選單寄送，避免修改狀態時意外重複寄信。
