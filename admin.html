@@ -25,6 +25,7 @@
 </section>
 <section class="panel"><h2 id="form-title">新增商品</h2><form id="product-form"><input type="hidden" id="edit-id">
 <div class="two"><label>商品編號＊<input id="product-code" required maxlength="40" placeholder="例如：A001"></label><label>商品名稱＊<input id="name" required maxlength="100" placeholder="例如：三菱 Jetstream 原子筆"></label></div>
+<div class="two"><label>廠牌／品牌<input id="brand" maxlength="60" placeholder="例如：三菱、百樂、PLUS"></label><label>功能分類<input id="function-category" maxlength="60" placeholder="例如：書寫、修正、收納"></label></div>
 <div class="two"><label>商品價格（元）＊<input id="price" type="number" min="0" step="1" required placeholder="例如：45"></label><label>商品標籤<input id="tag" maxlength="24" placeholder="例如：新品推薦"></label></div>
 <label>商品介紹<input id="desc" maxlength="120" placeholder="例如：適合日常書寫"></label>
 <div class="variant-editor"><div class="variant-heading"><strong>商品規格與庫存＊</strong><button type="button" class="light" id="add-variant">＋ 新增規格</button></div><p class="hint">每個規格請填名稱與庫存數量，例如 0.5mm／庫存 20。顧客選擇規格後才能加入購物車。</p><div id="variant-rows"></div></div>

@@ -52,7 +52,7 @@ $("toggle-password").addEventListener("click",()=>{
  button.textContent=visible?"顯示":"隱藏";
 });
 $("logout").addEventListener("click",logout);
-const fields=["productCode","name","price","tag","desc","symbol","image","url"];
+const fields=["productCode","name","brand","function-category","price","tag","desc","symbol","image","url"];
 function normalizeProduct(p){
  const variants=Array.isArray(p.variants)&&p.variants.length?p.variants:[{name:"一般規格",stock:null}];
  return {...p,productCode:String(p.productCode||p.code||("P"+String(p.id).padStart(4,"0"))),variants:variants.map((v,i)=>({name:String(v.name||("規格"+(i+1))),stock:v.stock===null||v.stock===undefined?null:Math.max(0,Number(v.stock)||0)}))};
@@ -83,7 +83,7 @@ function downloadProducts(message="已下載 products.json，請上傳到 GitHub
 }
 function render(){
  $("count").textContent=`（${products.length} 件）`;
- $("product-list").innerHTML=products.length?products.map(p=>`<div class="product-row"><div><strong>${esc(p.productCode)}｜${esc(p.name)}</strong><small>NT$ ${Number(p.price).toLocaleString("zh-TW")}　${esc(p.desc||"")}<br>${p.variants.map(v=>`${esc(v.name)}：${v.stock===null?"未設定":v.stock+" 件"}`).join("　／　")}</small></div><div class="row-actions"><button class="light" data-edit="${p.id}">修改</button><button class="delete" data-delete="${p.id}">刪除</button></div></div>`).join(""):'<p class="hint">目前沒有商品，請使用上方表單新增。</p>';
+ $("product-list").innerHTML=products.length?products.map(p=>`<div class="product-row"><div><strong>${esc(p.productCode)}｜${esc(p.name)}</strong><small>NT$ ${Number(p.price).toLocaleString("zh-TW")}　${esc(p.brand||"未分類廠牌")}｜${esc(p.functionCategory||"未分類功能")}　${esc(p.desc||"")}<br>${p.variants.map(v=>`${esc(v.name)}：${v.stock===null?"未設定":v.stock+" 件"}`).join("　／　")}</small></div><div class="row-actions"><button class="light" data-edit="${p.id}">修改</button><button class="delete" data-delete="${p.id}">刪除</button></div></div>`).join(""):'<p class="hint">目前沒有商品，請使用上方表單新增。</p>';
 }
 function reset(){
  $("product-form").reset();selectedProductImage="";$("image-preview").hidden=true;$("image-preview").innerHTML="";
@@ -97,7 +97,7 @@ $("product-form").addEventListener("submit",e=>{
  if(!variants.length||variants.some(v=>!v.name||!Number.isInteger(v.stock)||v.stock<0)){$("status").textContent="請填寫每個規格名稱及有效的庫存整數。";return}
  const productCode=$("product-code").value.trim();
  if(products.some(p=>p.productCode===productCode&&Number(p.id)!==id)){$("status").textContent="商品編號已存在，請使用不同編號。";return}
- const p={id,productCode,name:$("name").value.trim(),price:Number($("price").value),tag:$("tag").value.trim(),desc:$("desc").value.trim(),symbol:$("symbol").value.trim()||"文具",image:$("image").value.trim(),url:$("url").value.trim()||"#",category:"writing",variants};
+ const p={id,productCode,brand:$("brand").value.trim(),functionCategory:$("function-category").value.trim(),name:$("name").value.trim(),price:Number($("price").value),tag:$("tag").value.trim(),desc:$("desc").value.trim(),symbol:$("symbol").value.trim()||"文具",image:$("image").value.trim(),url:$("url").value.trim()||"#",category:"writing",variants};
  if(!p.productCode||!p.name||!Number.isFinite(p.price)||p.price<0){$("status").textContent="請確認商品編號、名稱與價格。";return}
  let i=products.findIndex(x=>Number(x.id)===id);i>=0?products[i]=p:products.push(p);
  reset();render();saveProductDraft();$("status").textContent="商品已儲存。可繼續新增或修改其他商品，全部完成後再按「下載更新檔」一次下載 products.json。";
@@ -106,7 +106,7 @@ $("product-list").addEventListener("click",e=>{
  let eb=e.target.closest("[data-edit]"),db=e.target.closest("[data-delete]");
  if(eb){
   let p=products.find(x=>Number(x.id)===Number(eb.dataset.edit));if(!p)return;
-  fields.forEach(k=>$(k==="productCode"?"product-code":k).value=p[k]??"");
+  fields.forEach(k=>$(k==="productCode"?"product-code":k==="function-category"?"function-category":k).value=p[k==="function-category"?"functionCategory":k]??"");
   $("edit-id").value=p.id;$("form-title").textContent="修改商品";$("submit-btn").textContent="儲存修改";$("cancel-edit").hidden=false;
   variantRows(p.variants||[{name:"一般規格",stock:0}]);scrollTo({top:0,behavior:"smooth"});
  }

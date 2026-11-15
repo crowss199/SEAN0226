@@ -21,6 +21,7 @@
    <form id="checkout-form" class="checkout-form">
     <label>取件人姓名（2–10字）<input name="recipient" required minlength="2" maxlength="10" autocomplete="name"></label>
     <label>取件人手機（10碼）<input name="phone" required inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel"></label>
+    <label>電子郵件（必填，用於接收訂單及出貨訊息）<input name="email" type="email" required maxlength="120" autocomplete="email" placeholder="example@email.com"></label>
     <div class="store-picker-field">
      <div class="store-search-wrap">
       <label for="store-search">搜尋 7-ELEVEN 門市（全台灣）</label>
