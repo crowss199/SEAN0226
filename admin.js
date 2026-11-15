@@ -128,6 +128,68 @@ $("import-file").onchange=async e=>{
 };
 variantRows([{name:"一般規格",barcode:"",stock:0}]);
 
+// 商品庫存試算表匯入：以每個規格的國際條碼對應庫存，只修改 variants[].stock。
+const inventoryBarcodeAliases=["國際條碼","商品國際條碼","商品條碼","條碼","條碼號碼","EAN","EAN13","EAN-13","UPC","Barcode","Barcode No","Barcode Number","GTIN"];
+const inventoryStockAliases=["庫存","庫存量","庫存數量","現有庫存","可用庫存","實際庫存","商品庫存","目前庫存","Stock","Qty","Quantity","Available","On Hand"];
+let inventorySourceRows=[],inventoryHeaders=[],inventorySourceName="",inventoryHeaderAt=-1;
+function normalizeInventoryBarcode(value){return String(value??"").trim().replace(/^'+/,"").replace(/[\s　-]/g,"").toUpperCase()}
+function inventoryHeaderScore(cells){
+ const labels=cells.map(v=>norm(v));
+ const barcode=labels.some(h=>inventoryBarcodeAliases.some(a=>h===norm(a)||h.includes(norm(a))));
+ const stock=labels.some(h=>inventoryStockAliases.some(a=>h===norm(a)||h.includes(norm(a))));
+ return (barcode?1:0)+(stock?1:0);
+}
+function findInventoryHeader(matrix){let best=-1,score=0;for(let i=0;i<Math.min(matrix.length,20);i++){const n=inventoryHeaderScore(matrix[i]);if(n>score){score=n;best=i;}if(n===2)break;}return score===2?best:-1}
+function inventoryColumnOptions(){return inventoryHeaders.map((h,i)=>`<option value="${i}">${esc(h||`第${i+1}欄（未命名）`)}（第 ${i+1} 欄）</option>`).join("")}
+function autoInventoryColumn(aliases){return inventoryHeaders.findIndex(h=>aliases.some(a=>norm(h)===norm(a)))>=0?inventoryHeaders.findIndex(h=>aliases.some(a=>norm(h)===norm(a))):inventoryHeaders.findIndex(h=>aliases.some(a=>norm(h).includes(norm(a))))}
+function readInventoryStock(value){const s=String(value??"").trim().replace(/[，,\s　]/g,"");if(!s)return null;const n=Number(s);return Number.isInteger(n)&&n>=0?n:null}
+function inventoryReport(){
+ const barcodeCol=Number($("inventory-barcode-col").value),stockCol=Number($("inventory-stock-col").value);
+ const imported=new Map();let invalid=0,blank=0;
+ for(const row of inventorySourceRows){const barcode=normalizeInventoryBarcode(row[barcodeCol]);if(!barcode){blank++;continue;}const stock=readInventoryStock(row[stockCol]);if(stock===null){invalid++;continue;}if(!imported.has(barcode))imported.set(barcode,[]);imported.get(barcode).push(stock);}
+ const website=new Map();for(const product of products)for(const variant of (product.variants||[])){const barcode=normalizeInventoryBarcode(variant.barcode);if(!barcode)continue;if(!website.has(barcode))website.set(barcode,[]);website.get(barcode).push({product,variant});}
+ const plans=[],duplicateSource=[],duplicateWebsite=[],unmatched=[];
+ for(const [barcode,stocks] of imported){if(stocks.length!==1){duplicateSource.push(barcode);continue;}const hits=website.get(barcode)||[];if(!hits.length){unmatched.push(barcode);continue;}if(hits.length!==1){duplicateWebsite.push(barcode);continue;}plans.push({barcode,stock:stocks[0],product:hits[0].product,variant:hits[0].variant});}
+ return {plans,invalid,blank,duplicateSource,duplicateWebsite,unmatched,sourceCount:inventorySourceRows.length,validCount:imported.size};
+}
+function renderInventoryPreview(){
+ const report=inventoryReport();const rows=inventorySourceRows.slice(0,8);const bcCol=Number($("inventory-barcode-col").value),stCol=Number($("inventory-stock-col").value);
+ $("inventory-preview").querySelector("thead").innerHTML="<tr><th>國際條碼</th><th>試算表庫存</th><th>比對結果</th></tr>";
+ $("inventory-preview").querySelector("tbody").innerHTML=rows.map(row=>{const bc=normalizeInventoryBarcode(row[bcCol]),stock=readInventoryStock(row[stCol]);const p=report.plans.find(x=>x.barcode===bc);let status=!bc?"缺少條碼":stock===null?"庫存不是非負整數":p?`匹配：${p.product.name}／${p.variant.name}`:report.duplicateSource.includes(bc)?"試算表條碼重複（略過）":report.duplicateWebsite.includes(bc)?"官網條碼重複（略過）":"官網找不到此條碼";return `<tr><td>${esc(bc)}</td><td>${stock===null?esc(row[stCol]):stock}</td><td>${esc(status)}</td></tr>`}).join("");
+ $("inventory-summary").innerHTML=`<strong>讀取 ${report.sourceCount} 筆資料</strong>　可更新 <strong>${report.plans.length}</strong> 個官網規格　找不到條碼 ${report.unmatched.length} 筆　試算表重複 ${report.duplicateSource.length} 筆　官網條碼重複 ${report.duplicateWebsite.length} 筆　庫存格式錯誤 ${report.invalid} 筆`;
+ $("inventory-sync-btn").disabled=report.plans.length===0;
+ $("inventory-status").textContent=`預覽前 ${Math.min(8,rows.length)} 筆。套用時只會更新唯一匹配的國際條碼。`;
+}
+$("inventory-file")?.addEventListener("change",async e=>{
+ const file=e.target.files[0];if(!file)return;
+ try{
+  if(!window.XLSX)throw Error("Excel／CSV 讀取元件載入失敗，請重新整理管理頁後再試。");
+  const workbook=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:false});if(!workbook.SheetNames.length)throw Error("檔案沒有工作表。");
+  const matrix=XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]],{header:1,defval:"",raw:false});if(!matrix.length)throw Error("第一個工作表沒有資料。");
+  inventoryHeaderAt=findInventoryHeader(matrix);if(inventoryHeaderAt<0)throw Error("前 20 列找不到同時包含「國際條碼」及「庫存」的標題列。請確認第一個工作表有這兩個欄位名稱。");
+  inventoryHeaders=matrix[inventoryHeaderAt].map((v,i)=>String(v??"").trim()||`第${i+1}欄`);
+  inventorySourceRows=matrix.slice(inventoryHeaderAt+1).filter(r=>r.some(v=>String(v??"").trim()));inventorySourceName=file.name;
+  if(!inventorySourceRows.length)throw Error("欄位標題下方沒有庫存資料。");
+  const bc=autoInventoryColumn(inventoryBarcodeAliases),st=autoInventoryColumn(inventoryStockAliases);
+  $("inventory-barcode-col").innerHTML=inventoryColumnOptions();$("inventory-stock-col").innerHTML=inventoryColumnOptions();
+  $("inventory-barcode-col").value=String(bc>=0?bc:0);$("inventory-stock-col").value=String(st>=0?st:Math.min(1,inventoryHeaders.length-1));
+  $("inventory-mapping-area").hidden=false;renderInventoryPreview();
+  $("inventory-status").textContent=`已載入：${inventorySourceName}（工作表：${workbook.SheetNames[0]}）。請檢查欄位對應與預覽結果。`;
+ }catch(err){$("inventory-mapping-area").hidden=true;$("inventory-status").textContent=err.message||"庫存試算表讀取失敗。";}
+ e.target.value="";
+});
+$("inventory-barcode-col")?.addEventListener("change",renderInventoryPreview);
+$("inventory-stock-col")?.addEventListener("change",renderInventoryPreview);
+$("inventory-sync-btn")?.addEventListener("click",()=>{
+ const report=inventoryReport();if(!report.plans.length){$("inventory-status").textContent="沒有可套用的唯一條碼匹配資料。";return;}
+ if(!confirm(`準備更新 ${report.plans.length} 個官網商品規格的庫存。未匹配及重複條碼不會修改。確定套用？`))return;
+ for(const item of report.plans)item.variant.stock=item.stock;
+ render();saveProductDraft();$("inventory-status").textContent=`庫存同步完成：已更新 ${report.plans.length} 個規格。請再按「下載更新檔」下載 products.json，並上傳 GitHub 才會更新官網。`;
+ $("inventory-sync-btn").disabled=true;
+});
+$("inventory-cancel-btn")?.addEventListener("click",()=>{$("inventory-mapping-area").hidden=true;inventorySourceRows=[];inventoryHeaders=[];inventorySourceName="";$("inventory-status").textContent="已取消庫存匯入。";});
+$("inventory-template")?.addEventListener("click",()=>{const csv="國際條碼,庫存\r\n4710000000000,25\r\n4710000000001,8\r\n";const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="商品庫存範例.csv";a.click();URL.revokeObjectURL(url);});
+
 // 7-ELEVEN 賣貨便訂單匯入（Excel／CSV）
 const ORDER_KEY="xiangAnImportedOrdersV1";
 const orderFields=[

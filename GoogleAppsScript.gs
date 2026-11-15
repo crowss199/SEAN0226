@@ -3,52 +3,103 @@ const HEADERS = ["訂單編號","下單時間","取件人姓名","取件人手�
 
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) throw new Error("請從連結的 Google 試算表開啟 Apps Script 後再執行 setup()。");
   let sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) sh = ss.insertSheet(SHEET_NAME);
-  removeStoreNameAddressColumns_(sh);
-  ensureEmailColumn_(sh);
-  ensureMailStatusColumn_(sh);
-  ensureShipmentStatusColumn_(sh);
-  ensureTrackingNumberColumn_(sh);
+
+  // 全新工作表直接建立完整標題列；既有工作表只補欄，不重排或覆寫訂單資料。
+  if (sh.getLastRow() === 0 || sh.getLastColumn() === 0) {
+    sh.getRange(1, 1, 1, HEADERS.length + 2).setValues([HEADERS.concat(["出貨通知狀態", "寄件編號"])]);
+    sh.setFrozenRows(1);
+  } else {
+    removeStoreNameAddressColumns_(sh);
+    ensureEmailColumn_(sh);
+    ensureMailStatusColumn_(sh);
+    repairKnownShipmentHeaderCollision_(sh);
+    ensureShipmentStatusColumn_(sh);
+    ensureTrackingNumberColumn_(sh);
+  }
+
   // 手機與寄件編號固定為純文字，保留開頭的 0 及英數字格式。
-  const phoneCol = HEADERS.indexOf("取件人手機") + 1;
-  if (sh.getLastRow() >= 1) sh.getRange(1, phoneCol, Math.max(sh.getLastRow(), 1), 1).setNumberFormat("@");
+  const phoneCol = getHeaderColumn_(sh, "取件人手機");
+  if (phoneCol > 0 && sh.getLastRow() >= 1) sh.getRange(1, phoneCol, sh.getLastRow(), 1).setNumberFormat("@");
   const trackingCol = getHeaderColumn_(sh, "寄件編號");
-  if (sh.getLastRow() >= 1 && trackingCol > 0) sh.getRange(1, trackingCol, sh.getLastRow(), 1).setNumberFormat("@");
+  if (trackingCol > 0 && sh.getLastRow() >= 1) sh.getRange(1, trackingCol, sh.getLastRow(), 1).setNumberFormat("@");
+
+  const required = ["訂單編號", "電子郵件", "出貨通知狀態", "寄件編號"];
+  const missing = required.filter(name => getHeaderColumn_(sh, name) < 1);
+  if (missing.length) {
+    throw new Error("setup() 無法建立必要欄位：" + missing.join("、") + "。請確認「官網訂單」第 1 列是欄位標題，且未合併儲存格。");
+  }
+
   // 觸發郵件授權提示；請由試算表擁有者手動執行 setup() 完成授權。
   MailApp.getRemainingDailyQuota();
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === "onEdit").forEach(t => ScriptApp.deleteTrigger(t));
-  if (sh.getLastRow() === 0) {
-    sh.appendRow(HEADERS.concat(["出貨通知狀態", "寄件編號"]));
-    sh.setFrozenRows(1);
-  } else {
-    // 確保既有試算表欄位順序與新版一致，不覆寫訂單資料。
-    const current = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), HEADERS.length)).getDisplayValues()[0];
-    if (current.every(v => !String(v).trim())) {
-      sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
-      sh.setFrozenRows(1);
-    }
+  sh.setFrozenRows(1);
+  ss.toast("欄位檢查完成：出貨通知狀態、寄件編號均已存在。", "翔安富文具", 8);
+}
+
+// 標題正規化：忽略前後空格、全形空格及零寬字元，避免標題看似相同卻比對不到。
+function normalizeHeader_(value) {
+  return String(value == null ? "" : value).replace(/[\uFEFF\u200B\u200C\u200D]/g, "").replace(/[\s　]+/g, "").trim();
+}
+
+function readHeaders_(sh) {
+  if (sh.getLastColumn() < 1) return [];
+  return sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(normalizeHeader_);
+}
+
+function getHeaderColumn_(sh, headerName) {
+  const headers = readHeaders_(sh);
+  return headers.indexOf(normalizeHeader_(headerName)) + 1;
+}
+
+// 新欄位直接寫入最後一個已使用欄位的下一欄；不可在 insertColumnAfter() 後再次用 getLastColumn() 定位，
+// 因為新插入的空白欄尚未有內容，getLastColumn() 仍可能回傳舊欄號，造成覆蓋「訂單狀態」等既有標題。
+function appendHeaderColumn_(sh, headerName, plainText) {
+  const existing = getHeaderColumn_(sh, headerName);
+  if (existing > 0) return existing;
+  const newCol = Math.max(sh.getLastColumn(), 0) + 1;
+  if (newCol > sh.getMaxColumns()) sh.insertColumnAfter(sh.getMaxColumns());
+  sh.getRange(1, newCol).setValue(headerName);
+  if (plainText) sh.getRange(1, newCol, Math.max(sh.getMaxRows(), 1), 1).setNumberFormat("@");
+  return newCol;
+}
+
+// 修復舊版 setup() 曾把最後一個基本欄位標題覆蓋成出貨欄位名稱的情況。
+// 只有在「訂單狀態」標題缺失、其原定第 14 欄標題被覆蓋，且該欄資料內容符合訂單狀態時才還原標題。
+function repairKnownShipmentHeaderCollision_(sh) {
+  const orderStatusCol = HEADERS.indexOf("訂單狀態") + 1;
+  if (orderStatusCol < 1 || sh.getLastColumn() < orderStatusCol) return;
+  const headers = readHeaders_(sh);
+  if (headers.includes(normalizeHeader_("訂單狀態"))) return;
+  const damagedHeader = headers[orderStatusCol - 1];
+  if (![normalizeHeader_("出貨通知狀態"), normalizeHeader_("寄件編號")].includes(damagedHeader)) return;
+  const dataRows = Math.max(sh.getLastRow() - 1, 0);
+  const values = dataRows ? sh.getRange(2, orderStatusCol, dataRows, 1).getDisplayValues().flat().map(v => String(v).trim()).filter(Boolean) : [];
+  const knownStatuses = new Set(["新訂單", "已出貨", "已取消", "取消訂單", "待出貨", "未出貨", "處理中", "已完成", "待處理", "待付款", "已付款", "已取貨", "已取件", "已送達", "已退貨", "退貨中"]);
+  if (values.length === 0 || values.every(value => knownStatuses.has(value))) {
+    sh.getRange(1, orderStatusCol).setValue("訂單狀態");
   }
 }
 
 // 舊試算表若尚無電子郵件欄，插入在手機號碼之後，不覆寫既有資料。
 function ensureEmailColumn_(sh) {
   if (sh.getLastRow() === 0) return;
-  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
-  if (headers.includes("電子郵件")) return;
-  const phoneIndex = headers.indexOf("取件人手機");
-  if (phoneIndex < 0) throw Error("找不到取件人手機欄位，請確認標題列");
+  const headers = readHeaders_(sh);
+  if (headers.includes(normalizeHeader_("電子郵件"))) return;
+  const phoneIndex = headers.indexOf(normalizeHeader_("取件人手機"));
+  if (phoneIndex < 0) throw Error("找不到取件人手機欄位，請確認「官網訂單」第 1 列標題");
   sh.insertColumnAfter(phoneIndex + 1);
   sh.getRange(1, phoneIndex + 2).setValue("電子郵件");
 }
 
-
 // 在電子郵件欄後新增郵件通知狀態欄，保留既有訂單資料。
 function ensureMailStatusColumn_(sh) {
   if (sh.getLastRow() === 0) return;
-  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
-  if (headers.includes("郵件通知狀態")) return;
-  const emailIndex = headers.indexOf("電子郵件");
+  const headers = readHeaders_(sh);
+  if (headers.includes(normalizeHeader_("郵件通知狀態"))) return;
+  const emailIndex = headers.indexOf(normalizeHeader_("電子郵件"));
   if (emailIndex < 0) throw Error("找不到電子郵件欄位");
   sh.insertColumnAfter(emailIndex + 1);
   sh.getRange(1, emailIndex + 2).setValue("郵件通知狀態");
@@ -57,26 +108,13 @@ function ensureMailStatusColumn_(sh) {
 // 新增獨立出貨通知狀態欄，避免與訂單成立通知混淆。
 function ensureShipmentStatusColumn_(sh) {
   if (sh.getLastRow() === 0) return;
-  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
-  if (headers.includes("出貨通知狀態")) return;
-  sh.insertColumnAfter(sh.getLastColumn());
-  sh.getRange(1, sh.getLastColumn()).setValue("出貨通知狀態");
+  appendHeaderColumn_(sh, "出貨通知狀態", false);
 }
 
 // 新增寄件編號欄，供出貨通知記錄使用；既有訂單資料不會被覆寫。
 function ensureTrackingNumberColumn_(sh) {
   if (sh.getLastRow() === 0) return;
-  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
-  if (headers.includes("寄件編號")) return;
-  sh.insertColumnAfter(sh.getLastColumn());
-  sh.getRange(1, sh.getLastColumn()).setValue("寄件編號");
-  sh.getRange(1, sh.getLastColumn(), Math.max(sh.getLastRow(), 1), 1).setNumberFormat("@");
-}
-
-function getHeaderColumn_(sh, headerName) {
-  if (sh.getLastColumn() < 1) return 0;
-  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
-  return headers.indexOf(headerName) + 1;
+  appendHeaderColumn_(sh, "寄件編號", true);
 }
 
 function onOpen() {
@@ -122,10 +160,14 @@ function sendShipmentNotificationForSelectedRow() {
     SpreadsheetApp.getUi().alert("請先到「官網訂單」工作表，點選要通知的訂單資料列。");
     return;
   }
-  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(v => String(v).trim());
-  const col = name => headers.indexOf(name) + 1;
+  // 先補齊欄位並修復舊版標題覆蓋問題，再讀取欄位位置。
+  repairKnownShipmentHeaderCollision_(sh);
+  ensureShipmentStatusColumn_(sh);
+  ensureTrackingNumberColumn_(sh);
+  const headers = readHeaders_(sh);
+  const col = name => headers.indexOf(normalizeHeader_(name)) + 1;
   const emailCol=col("電子郵件"), orderCol=col("訂單編號"), recipientCol=col("取件人姓名"), storeCol=col("取件門市店號"), statusCol=col("出貨通知狀態"), trackingCol=col("寄件編號"), orderStatusCol=col("訂單狀態");
-  if ([emailCol,orderCol,statusCol,trackingCol].some(v => v < 1)) { SpreadsheetApp.getUi().alert("找不到必要欄位，請先執行 setup() 新增出貨通知與寄件編號欄位。"); return; }
+  if ([emailCol,orderCol,statusCol,trackingCol].some(v => v < 1)) { SpreadsheetApp.getUi().alert("必要欄位仍不完整。請確認「官網訂單」第 1 列是欄位標題，沒有合併儲存格，再執行新版 setup()。"); return; }
   const email=String(sh.getRange(row,emailCol).getDisplayValue()).trim();
   const orderId=String(sh.getRange(row,orderCol).getDisplayValue()).trim();
   const previous=String(sh.getRange(row,statusCol).getDisplayValue()).trim();
@@ -164,9 +206,9 @@ function sendShipmentNotificationForSelectedRow() {
     const displayStoreId = storeId || "（無資料）";
     const body = "您好 " + recipient + "，您的訂單已出貨。\n\n" +
       "訂單編號：" + orderId + "\n" +
-      "取件門市名稱：" + displayStoreName + "\n" +
-      "取件門市編號：" + displayStoreId + "\n" +
-      "取件門市地址：" + displayStoreAddress + "\n" +
+      "7-11取件門市名稱：" + displayStoreName + "\n" +
+      "7-11取件門市編號：" + displayStoreId + "\n" +
+      "7-11取件門市地址：" + displayStoreAddress + "\n" +
       "寄件編號：" + trackingNumber + "\n\n" +
       "請留意物流及到店通知。\n翔安富文具";
     const htmlBody = '<div style="font-family:Arial,Microsoft JhengHei,sans-serif;line-height:1.8;color:#222;max-width:620px">' +
@@ -174,9 +216,9 @@ function sendShipmentNotificationForSelectedRow() {
       '<p>您好 ' + escapeShipmentHtml_(recipient) + '，您的訂單已出貨。</p>' +
       '<div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin:16px 0">' +
       '<p><strong>訂單編號：</strong>' + escapeShipmentHtml_(orderId) + '</p>' +
-      '<p><strong>取件門市名稱：</strong>' + escapeShipmentHtml_(displayStoreName) + '</p>' +
-      '<p><strong>取件門市編號：</strong>' + escapeShipmentHtml_(displayStoreId) + '</p>' +
-      '<p><strong>取件門市地址：</strong>' + escapeShipmentHtml_(displayStoreAddress) + '</p>' +
+      '<p><strong>7-11取件門市名稱：</strong>' + escapeShipmentHtml_(displayStoreName) + '</p>' +
+      '<p><strong>7-11取件門市編號：</strong>' + escapeShipmentHtml_(displayStoreId) + '</p>' +
+      '<p><strong>7-11取件門市地址：</strong>' + escapeShipmentHtml_(displayStoreAddress) + '</p>' +
       '<p><strong>寄件編號：</strong>' + escapeShipmentHtml_(trackingNumber) + '</p>' +
       '</div><p>請留意物流及到店通知。</p><p>翔安富文具</p></div>';
     MailApp.sendEmail({to:email,subject:"翔安富文具｜您的訂單已出貨 " + orderId,body:body,htmlBody:htmlBody});
@@ -195,7 +237,7 @@ function removeStoreNameAddressColumns_(sh) {
   const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
   const targets = new Set(["門市名稱", "門市地址"]);
   for (let col = headers.length - 1; col >= 0; col--) {
-    if (targets.has(String(headers[col]).trim())) sh.deleteColumn(col + 1);
+    if (targets.has(normalizeHeader_(headers[col]))) sh.deleteColumn(col + 1);
   }
 }
 
@@ -215,6 +257,7 @@ function doPost(e) {
     removeStoreNameAddressColumns_(sh);
     ensureEmailColumn_(sh);
     ensureMailStatusColumn_(sh);
+    repairKnownShipmentHeaderCollision_(sh);
     ensureShipmentStatusColumn_(sh);
     ensureTrackingNumberColumn_(sh);
 
