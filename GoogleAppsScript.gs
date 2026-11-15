@@ -66,6 +66,13 @@ function onOpen() {
     .addToUi();
 }
 
+// 將郵件欄位安全轉成 HTML 文字，避免特殊字元影響郵件版面。
+function escapeShipmentHtml_(value) {
+  return String(value == null ? "" : value).replace(/[&<>"']/g, function(ch) {
+    return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"})[ch];
+  });
+}
+
 // 在「官網訂單」工作表選取一筆訂單資料列，再從上方選單按出貨通知。
 function sendShipmentNotificationForSelectedRow() {
   const sh = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
@@ -87,9 +94,12 @@ function sendShipmentNotificationForSelectedRow() {
     const rawInfo=String(sh.getRange(row,infoCol).getDisplayValue()||"").trim();
     try{extraInfo=rawInfo?JSON.parse(rawInfo):{};}catch(_){extraInfo={};}
   }
+  // 相容不同版本曾使用的欄位名稱或巢狀資料格式。
+  const legacyStoreNameCol = col("取件門市名稱") || col("門市名稱");
+  const legacyStoreAddressCol = col("取件門市地址") || col("門市地址");
   const storeId=storeCol>0?String(sh.getRange(row,storeCol).getDisplayValue()||"").trim():"";
-  const storeName=String(extraInfo.storeName||"").trim();
-  const storeAddress=String(extraInfo.storeAddress||"").trim();
+  const storeName=String(extraInfo.storeName || extraInfo.store_name || (extraInfo.store && extraInfo.store.name) || (legacyStoreNameCol>0?sh.getRange(row,legacyStoreNameCol).getDisplayValue():"") || "").trim();
+  const storeAddress=String(extraInfo.storeAddress || extraInfo.store_address || (extraInfo.store && extraInfo.store.address) || (legacyStoreAddressCol>0?sh.getRange(row,legacyStoreAddressCol).getDisplayValue():"") || "").trim();
   if (!email || !orderId) { SpreadsheetApp.getUi().alert("此訂單缺少電子郵件或訂單編號，無法寄送。"); return; }
   if (previous.indexOf("已寄送") === 0) {
     const answer = SpreadsheetApp.getUi().alert("此訂單已寄送過出貨通知。是否仍要再次寄送？", SpreadsheetApp.getUi().ButtonSet.YES_NO);
@@ -97,8 +107,26 @@ function sendShipmentNotificationForSelectedRow() {
   }
   if (orderStatusCol > 0) sh.getRange(row,orderStatusCol).setValue("已出貨");
   try {
-    const body="您好 " + (sh.getRange(row,recipientCol).getDisplayValue() || "") + "，您的訂單已出貨。\n\n訂單編號：" + orderId + "\n取件門市名稱：" + (storeName || "（訂單未保存門市名稱）") + "\n取件門市編號：" + (storeId || "（無資料）") + "\n取件門市地址：" + (storeAddress || "（訂單未保存門市地址）") + "\n\n請留意物流及到店通知。\n翔安富文具";
-    MailApp.sendEmail({to:email,subject:"翔安富文具｜您的訂單已出貨 " + orderId,body:body});
+    const recipient = recipientCol>0 ? String(sh.getRange(row,recipientCol).getDisplayValue() || "").trim() : "顧客";
+    const displayStoreName = storeName || "（訂單未保存門市名稱）";
+    const displayStoreAddress = storeAddress || "（訂單未保存門市地址）";
+    const displayStoreId = storeId || "（無資料）";
+    const body = "您好 " + recipient + "，您的訂單已出貨。\n\n" +
+      "訂單編號：" + orderId + "\n" +
+      "取件門市名稱：" + displayStoreName + "\n" +
+      "取件門市編號：" + displayStoreId + "\n" +
+      "取件門市地址：" + displayStoreAddress + "\n\n" +
+      "請留意物流及到店通知。\n翔安富文具";
+    const htmlBody = '<div style="font-family:Arial,Microsoft JhengHei,sans-serif;line-height:1.8;color:#222;max-width:620px">' +
+      '<h2 style="font-size:20px">您的訂單已出貨</h2>' +
+      '<p>您好 ' + escapeShipmentHtml_(recipient) + '，您的訂單已出貨。</p>' +
+      '<div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin:16px 0">' +
+      '<p><strong>訂單編號：</strong>' + escapeShipmentHtml_(orderId) + '</p>' +
+      '<p><strong>取件門市名稱：</strong>' + escapeShipmentHtml_(displayStoreName) + '</p>' +
+      '<p><strong>取件門市編號：</strong>' + escapeShipmentHtml_(displayStoreId) + '</p>' +
+      '<p><strong>取件門市地址：</strong>' + escapeShipmentHtml_(displayStoreAddress) + '</p>' +
+      '</div><p>請留意物流及到店通知。</p><p>翔安富文具</p></div>';
+    MailApp.sendEmail({to:email,subject:"翔安富文具｜您的訂單已出貨 " + orderId,body:body,htmlBody:htmlBody});
     sh.getRange(row,statusCol).setValue("已寄送 " + new Date().toLocaleString("zh-TW"));
     SpreadsheetApp.getUi().alert("出貨通知已寄送至：" + email);
   } catch(err) {
