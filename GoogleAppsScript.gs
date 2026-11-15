@@ -1,4 +1,6 @@
 const SHEET_NAME = "官網訂單";
+const DETAIL_SHEET_NAME = "訂單商品明細";
+const DETAIL_HEADERS = ["訂單編號","下單時間","商品編號","商品名稱","商品規格","銷售條碼","銷售數量","銷售單價","銷售金額"];
 const HEADERS = ["訂單編號","下單時間","取件人姓名","取件人手機","電子郵件","郵件通知狀態","取件門市店號","溫層","商品","商品金額","運費金額","備註","其他資訊","訂單狀態"];
 
 function setup() {
@@ -31,6 +33,9 @@ function setup() {
   if (missing.length) {
     throw new Error("setup() 無法建立必要欄位：" + missing.join("、") + "。請確認「官網訂單」第 1 列是欄位標題，且未合併儲存格。");
   }
+
+  // 建立／補齊逐項商品明細工作表；「銷售條碼」欄存放商品規格的國際條碼。
+  ensureOrderDetailSheet_();
 
   // 觸發郵件授權提示；請由試算表擁有者手動執行 setup() 完成授權。
   MailApp.getRemainingDailyQuota();
@@ -115,6 +120,63 @@ function ensureShipmentStatusColumn_(sh) {
 function ensureTrackingNumberColumn_(sh) {
   if (sh.getLastRow() === 0) return;
   appendHeaderColumn_(sh, "寄件編號", true);
+}
+
+// 建立或補齊訂單商品明細工作表。保留既有欄位及資料，不重排使用者欄位。
+function ensureOrderDetailSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let detail = ss.getSheetByName(DETAIL_SHEET_NAME);
+  if (!detail) detail = ss.insertSheet(DETAIL_SHEET_NAME);
+  if (detail.getLastRow() === 0 || detail.getLastColumn() === 0) {
+    detail.getRange(1, 1, 1, DETAIL_HEADERS.length).setValues([DETAIL_HEADERS]);
+  } else {
+    let headers = readHeaders_(detail);
+    DETAIL_HEADERS.forEach(name => {
+      if (!headers.includes(normalizeHeader_(name))) {
+        appendHeaderColumn_(detail, name, name === "銷售條碼");
+        headers = readHeaders_(detail);
+      }
+    });
+  }
+  const headers = readHeaders_(detail);
+  const barcodeCol = headers.indexOf(normalizeHeader_("銷售條碼")) + 1;
+  if (barcodeCol > 0 && detail.getMaxRows() > 0) {
+    detail.getRange(1, barcodeCol, detail.getMaxRows(), 1).setNumberFormat("@");
+  }
+  detail.setFrozenRows(1);
+  return detail;
+}
+
+// 每個購買規格各寫一列；銷售條碼來源為結帳頁從 products.json 規格 barcode 帶來的國際條碼。
+function appendOrderItemDetails_(order, orderDate) {
+  if (!Array.isArray(order.items) || order.items.length === 0) return;
+  const detail = ensureOrderDetailSheet_();
+  const headers = readHeaders_(detail);
+  const col = name => headers.indexOf(normalizeHeader_(name));
+  const rows = order.items.map(item => {
+    const values = new Array(detail.getLastColumn()).fill("");
+    const barcode = String(item.barcode || item.internationalBarcode || item.salesBarcode || "").trim();
+    const data = {
+      "訂單編號": String(order.orderId || ""),
+      "下單時間": orderDate,
+      "商品編號": String(item.productCode || item.code || ""),
+      "商品名稱": String(item.name || ""),
+      "商品規格": String(item.variant || "一般規格"),
+      "銷售條碼": barcode,
+      "銷售數量": Number(item.quantity || 0),
+      "銷售單價": Number(item.unitPrice || 0),
+      "銷售金額": Number(item.amount || 0)
+    };
+    Object.keys(data).forEach(name => {
+      const index = col(name);
+      if (index >= 0) values[index] = data[name];
+    });
+    return values;
+  });
+  const startRow = detail.getLastRow() + 1;
+  const barcodeCol = col("銷售條碼") + 1;
+  if (barcodeCol > 0) detail.getRange(startRow, barcodeCol, rows.length, 1).setNumberFormat("@");
+  detail.getRange(startRow, 1, rows.length, detail.getLastColumn()).setValues(rows);
 }
 
 function onOpen() {
@@ -260,6 +322,7 @@ function doPost(e) {
     repairKnownShipmentHeaderCollision_(sh);
     ensureShipmentStatusColumn_(sh);
     ensureTrackingNumberColumn_(sh);
+    ensureOrderDetailSheet_();
 
     const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getDisplayValues().flat() : [];
     if (ids.includes(String(d.orderId))) throw Error("重複訂單");
@@ -272,12 +335,14 @@ function doPost(e) {
     const trackingNumberCol = getHeaderColumn_(sh, "寄件編號");
     sh.getRange(newRow, phoneCol).setNumberFormat("@");
     if (trackingNumberCol > 0) sh.getRange(newRow, trackingNumberCol).setNumberFormat("@");
+    const orderDate = new Date(d.createdAt || Date.now());
     sh.getRange(newRow, 1, 1, HEADERS.length).setValues([[
-      String(d.orderId), new Date(d.createdAt || Date.now()), String(d.recipient),
+      String(d.orderId), orderDate, String(d.recipient),
       String(d.phone), String(d.email), "待寄送", String(d.storeId), String(d.temperature), goods,
       Number(d.productAmount), Number(d.shippingFee), String(d.note || ""),
       JSON.stringify({social:String(d.social || ""),storeName:String(d.storeName || ""),storeAddress:String(d.storeAddress || "")}), "新訂單"
     ]]);
+    appendOrderItemDetails_(d, orderDate);
     let mailStatus = "寄送失敗";
     try {
       MailApp.sendEmail({
