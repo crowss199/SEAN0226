@@ -27,3 +27,10 @@
 /* 規格列增加國際條碼欄位 */
 .variant-row{grid-template-columns:1fr 1fr 150px auto}
 @media(max-width:700px){.variant-row{grid-template-columns:1fr 1fr}.variant-row button{grid-column:2}}
+
+/* V9：國際條碼欄位清楚呈現、修改商品定位 */
+#form-title{scroll-margin-top:100px;outline:none}
+.variant-heading strong{display:block;font-size:15px;letter-spacing:.3px}
+.variant-row label:nth-child(2){border-left:2px solid #68745f;padding-left:10px}
+.variant-row label:nth-child(2)::before{content:"EAN / UPC";display:block;color:#68745f;font-size:10px;font-weight:700;margin-bottom:3px}
+@media(max-width:700px){.variant-row{grid-template-columns:1fr!important}.variant-row label:nth-child(2){border-left:0;border-top:1px solid #e3e6de;padding:9px 0 0}.variant-row button{grid-column:auto!important}}

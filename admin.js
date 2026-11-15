@@ -108,7 +108,7 @@ $("product-list").addEventListener("click",e=>{
   let p=products.find(x=>Number(x.id)===Number(eb.dataset.edit));if(!p)return;
   fields.forEach(k=>$(k==="productCode"?"product-code":k==="function-category"?"function-category":k).value=p[k==="function-category"?"functionCategory":k]??"");
   $("edit-id").value=p.id;$("form-title").textContent="修改商品";$("submit-btn").textContent="儲存修改";$("cancel-edit").hidden=false;
-  variantRows(p.variants||[{name:"一般規格",stock:0}]);const editTarget=$("form-title");editTarget.scrollIntoView({behavior:"smooth",block:"start"});setTimeout(()=>$("product-code").focus({preventScroll:true}),350);
+  variantRows(p.variants||[{name:"一般規格",barcode:"",stock:0}]);const editTarget=$("form-title");const top=editTarget.getBoundingClientRect().top+window.pageYOffset-90;window.scrollTo({top:Math.max(0,top),behavior:"smooth"});setTimeout(()=>{editTarget.focus?.({preventScroll:true});$("product-code").focus({preventScroll:true});},450);
  }
  if(db){
   let id=Number(db.dataset.delete),p=products.find(x=>Number(x.id)===id);
