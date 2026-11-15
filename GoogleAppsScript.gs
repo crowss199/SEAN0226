@@ -81,6 +81,7 @@ function getHeaderColumn_(sh, headerName) {
 
 function onOpen() {
   SpreadsheetApp.getUi().createMenu("翔安富文具")
+    .addItem("定位目前訂單的寄件編號欄", "selectTrackingCellForSelectedRow")
     .addItem("通知目前選取訂單已出貨", "sendShipmentNotificationForSelectedRow")
     .addToUi();
 }
@@ -92,7 +93,28 @@ function escapeShipmentHtml_(value) {
   });
 }
 
-// 在「官網訂單」工作表選取一筆訂單資料列，再從上方選單按出貨通知。
+// 將目前選取訂單的游標移到「寄件編號」欄，方便直接在試算表手動輸入。
+function selectTrackingCellForSelectedRow() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getActiveSheet();
+  const row = sh.getActiveRange() ? sh.getActiveRange().getRow() : 0;
+  const ui = SpreadsheetApp.getUi();
+  if (sh.getName() !== SHEET_NAME || row < 2) {
+    ui.alert("請先到「官網訂單」工作表，點選要出貨的訂單資料列，再執行此功能。");
+    return;
+  }
+  const trackingCol = getHeaderColumn_(sh, "寄件編號");
+  if (trackingCol < 1) {
+    ui.alert("找不到「寄件編號」欄，請先執行 setup()。");
+    return;
+  }
+  const cell = sh.getRange(row, trackingCol);
+  cell.setNumberFormat("@");
+  sh.setActiveRange(cell);
+  ss.toast("請直接在目前選取的儲存格輸入寄件編號，輸入後再按「通知目前選取訂單已出貨」。", "翔安富文具", 8);
+}
+
+// 在「官網訂單」工作表選取一筆訂單資料列，先在「寄件編號」欄輸入編號，再按出貨通知。
 function sendShipmentNotificationForSelectedRow() {
   const sh = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const row = sh.getActiveRange() ? sh.getActiveRange().getRow() : 0;
@@ -120,22 +142,21 @@ function sendShipmentNotificationForSelectedRow() {
   const storeName=String(extraInfo.storeName || extraInfo.store_name || (extraInfo.store && extraInfo.store.name) || (legacyStoreNameCol>0?sh.getRange(row,legacyStoreNameCol).getDisplayValue():"") || "").trim();
   const storeAddress=String(extraInfo.storeAddress || extraInfo.store_address || (extraInfo.store && extraInfo.store.address) || (legacyStoreAddressCol>0?sh.getRange(row,legacyStoreAddressCol).getDisplayValue():"") || "").trim();
   if (!email || !orderId) { SpreadsheetApp.getUi().alert("此訂單缺少電子郵件或訂單編號，無法寄送。"); return; }
+  // 寄件編號直接從目前訂單的試算表儲存格讀取，不再使用彈出輸入視窗。
+  const trackingCell = sh.getRange(row, trackingCol);
+  const trackingNumber = String(trackingCell.getDisplayValue() || "").trim();
+  if (!trackingNumber) {
+    sh.setActiveRange(trackingCell);
+    SpreadsheetApp.getUi().alert("尚未輸入寄件編號。已將游標移到本筆訂單的「寄件編號」欄，請輸入編號後，再按一次「通知目前選取訂單已出貨」。");
+    return;
+  }
   if (previous.indexOf("已寄送") === 0) {
     const answer = SpreadsheetApp.getUi().alert("此訂單已寄送過出貨通知。是否仍要再次寄送？", SpreadsheetApp.getUi().ButtonSet.YES_NO);
     if (answer !== SpreadsheetApp.getUi().Button.YES) return;
   }
   const ui = SpreadsheetApp.getUi();
-  const trackingPrompt = ui.prompt("輸入寄件編號", "請手動輸入本筆訂單的寄件編號，內容會顯示在出貨通知 Email 中。", ui.ButtonSet.OK_CANCEL);
-  if (trackingPrompt.getSelectedButton() !== ui.Button.OK) return;
-  const trackingNumber = String(trackingPrompt.getResponseText() || "").trim();
-  if (!trackingNumber) {
-    ui.alert("寄件編號不可空白，尚未寄出通知。");
-    return;
-  }
-  // 先以純文字保存，避免寄件編號開頭的 0 遺失。
-  sh.getRange(row, trackingCol).setNumberFormat("@");
-  sh.getRange(row, trackingCol).setValue(trackingNumber);
-  if (orderStatusCol > 0) sh.getRange(row,orderStatusCol).setValue("已出貨");
+  // 保持寄件編號欄為純文字，避免開頭的 0 或英文字母被轉換。
+  trackingCell.setNumberFormat("@");
   try {
     const recipient = recipientCol>0 ? String(sh.getRange(row,recipientCol).getDisplayValue() || "").trim() : "顧客";
     const displayStoreName = storeName || "（訂單未保存門市名稱）";
@@ -160,6 +181,7 @@ function sendShipmentNotificationForSelectedRow() {
       '</div><p>請留意物流及到店通知。</p><p>翔安富文具</p></div>';
     MailApp.sendEmail({to:email,subject:"翔安富文具｜您的訂單已出貨 " + orderId,body:body,htmlBody:htmlBody});
     sh.getRange(row,statusCol).setValue("已寄送 " + new Date().toLocaleString("zh-TW") + "｜寄件編號：" + trackingNumber);
+    if (orderStatusCol > 0) sh.getRange(row,orderStatusCol).setValue("已出貨");
     ui.alert("出貨通知已寄送至：" + email + "\n寄件編號：" + trackingNumber);
   } catch(err) {
     sh.getRange(row,statusCol).setValue("寄送失敗：" + String(err.message || err).slice(0,120));
@@ -194,6 +216,7 @@ function doPost(e) {
     ensureEmailColumn_(sh);
     ensureMailStatusColumn_(sh);
     ensureShipmentStatusColumn_(sh);
+    ensureTrackingNumberColumn_(sh);
 
     const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getDisplayValues().flat() : [];
     if (ids.includes(String(d.orderId))) throw Error("重複訂單");
@@ -203,7 +226,9 @@ function doPost(e) {
     // 先將手機欄設為純文字，再寫入完整字串，保留開頭的 0。
     const newRow = sh.getLastRow() + 1;
     const phoneCol = HEADERS.indexOf("取件人手機") + 1;
+    const trackingNumberCol = getHeaderColumn_(sh, "寄件編號");
     sh.getRange(newRow, phoneCol).setNumberFormat("@");
+    if (trackingNumberCol > 0) sh.getRange(newRow, trackingNumberCol).setNumberFormat("@");
     sh.getRange(newRow, 1, 1, HEADERS.length).setValues([[
       String(d.orderId), new Date(d.createdAt || Date.now()), String(d.recipient),
       String(d.phone), String(d.email), "待寄送", String(d.storeId), String(d.temperature), goods,
