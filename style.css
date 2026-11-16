@@ -114,3 +114,8 @@ body{background:#fff;color:var(--ink)}
 /* V20：商品卡片庫存查詢連結 */
 .product-actions{gap:10px;flex-wrap:wrap}.product-mall-link{display:inline-flex;align-items:center;text-decoration:underline;text-underline-offset:3px;color:#68745f;padding:5px 0}.product-image-empty{pointer-events:none}
 @media(max-width:700px){.product-actions{align-items:center}.product-mall-link{font-size:9px}}
+
+/* V21：庫存查詢連結放在商品資訊區，供顧客直接點選 */
+.product-details .product-mall-link{display:inline-block;margin-top:12px;border:0;border-bottom:1px solid #bfc7b9;padding:0 0 4px;color:#56624f;font-size:11px;text-decoration:none}
+.product-details .product-mall-link:hover{color:#2f3c2c;border-color:#68745f}
+@media(max-width:700px){.product-details .product-mall-link{font-size:9px;margin-top:9px}}

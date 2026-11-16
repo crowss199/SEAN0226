@@ -40,3 +40,7 @@
 
 /* 國際條碼庫存同步工具 */
 .inventory-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}.inventory-mapping{margin:12px 0}.inventory-summary{padding:12px 14px;background:#f5f6f1;border:1px solid #e2e6dc;margin:12px 0;line-height:1.9;font-size:13px}.inventory-summary strong{font-weight:800}.inventory-summary strong:first-child{font-weight:700}#inventory-preview{min-width:560px}#inventory-preview td{font-size:13px;vertical-align:top}
+
+/* V21：規格編輯改為名稱、國際條碼、價格；庫存由條碼同步隱藏保存 */
+.variant-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 140px auto!important}
+@media(max-width:700px){.variant-row{grid-template-columns:1fr!important}.variant-row label:nth-child(2){border-left:0;border-top:1px solid #e3e6de;padding:9px 0 0}.variant-row button{grid-column:auto!important}}

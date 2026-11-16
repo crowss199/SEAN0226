@@ -52,24 +52,34 @@ $("toggle-password").addEventListener("click",()=>{
  button.textContent=visible?"顯示":"隱藏";
 });
 $("logout").addEventListener("click",logout);
-const fields=["productCode","name","brand","function-category","price","desc","image","url"];
+const fields=["name","brand","function-category","desc","image","url"];
 function normalizeProduct(p){
- const variants=Array.isArray(p.variants)&&p.variants.length?p.variants:[{name:"一般規格",stock:null}];
- return {...p,productCode:String(p.productCode||p.code||("P"+String(p.id).padStart(4,"0"))),variants:variants.map((v,i)=>({name:String(v.name||("規格"+(i+1))),barcode:String(v.barcode||""),stock:v.stock===null||v.stock===undefined?null:Math.max(0,Number(v.stock)||0)}))};
+ const source=Array.isArray(p.variants)&&p.variants.length?p.variants:[{name:"一般規格",stock:p.stock===undefined?null:p.stock,price:p.price}];
+ return {...p,variants:source.map((v,i)=>{
+  const rawPrice=v.price===undefined||v.price===null||v.price===""?p.price:v.price;
+  const price=Number(rawPrice);
+  const rawStock=v.stock;
+  return {...v,name:String(v.name||("規格"+(i+1))),barcode:String(v.barcode||v.internationalBarcode||""),price:Number.isFinite(price)&&price>=0?price:0,stock:rawStock===null||rawStock===undefined||rawStock===""?null:Math.max(0,Number(rawStock)||0)};
+ })};
 }
-function variantRows(list=[{name:"一般規格",barcode:"",stock:0}]){
- $("variant-rows").innerHTML=list.map((v,i)=>`<div class="variant-row"><label>規格名稱<input class="variant-name" maxlength="60" required value="${esc(v.name)}" placeholder="例如：0.5mm 黑色"></label><label>國際條碼（選填）<input class="variant-barcode" inputmode="numeric" maxlength="32" value="${esc(v.barcode||"")}" placeholder="例如：4710000000000"></label><label>庫存數量<input class="variant-stock" type="number" min="0" step="1" required value="${v.stock===null?0:Number(v.stock)}"></label><button type="button" class="delete remove-variant" aria-label="刪除此規格" ${list.length===1?"disabled":""}>刪除</button></div>`).join("");
+function readVariantRows(){
+ return [...$("variant-rows").querySelectorAll(".variant-row")].map(r=>{
+  const stockValue=r.querySelector(".variant-stock-preserved").value;
+  const priceValue=r.querySelector(".variant-price").value.trim();
+  return {name:r.querySelector(".variant-name").value.trim(),barcode:r.querySelector(".variant-barcode").value.trim(),price:priceValue===""?NaN:Number(priceValue),stock:stockValue===""?null:Math.max(0,Number(stockValue)||0)};
+ });
+}
+function variantRows(list=[{name:"一般規格",barcode:"",price:"",stock:0}]){
+ $("variant-rows").innerHTML=list.map((v,i)=>`<div class="variant-row"><label>規格名稱<input class="variant-name" maxlength="60" required value="${esc(v.name)}" placeholder="例如：0.5mm 黑色"></label><label>國際條碼（選填）<input class="variant-barcode" inputmode="numeric" maxlength="32" value="${esc(v.barcode||"")}" placeholder="例如：4710000000000"></label><label>規格價格（元）<input class="variant-price" type="number" min="0" step="1" required value="${v.price===undefined||v.price===null?"":esc(v.price)}" placeholder="例如：45"></label><input class="variant-stock-preserved" type="hidden" value="${v.stock===null||v.stock===undefined?"":esc(v.stock)}"><button type="button" class="delete remove-variant" aria-label="刪除此規格" ${list.length===1?"disabled":""}>刪除</button></div>`).join("");
 }
 $("add-variant").addEventListener("click",()=>{
- const list=[...$("variant-rows").querySelectorAll(".variant-row")].map(r=>({name:r.querySelector(".variant-name").value,barcode:r.querySelector(".variant-barcode").value.trim(),stock:Number(r.querySelector(".variant-stock").value)||0}));
- list.push({name:"",stock:0});variantRows(list);
+ const list=readVariantRows();list.push({name:"",barcode:"",price:"",stock:0});variantRows(list);
 });
 $("variant-rows").addEventListener("click",e=>{
  if(!e.target.closest(".remove-variant"))return;
- const rows=[...$("variant-rows").querySelectorAll(".variant-row")];
- if(rows.length<=1)return;
- const list=rows.filter(r=>r!==e.target.closest(".variant-row")).map(r=>({name:r.querySelector(".variant-name").value,barcode:r.querySelector(".variant-barcode").value.trim(),stock:Number(r.querySelector(".variant-stock").value)||0}));
- variantRows(list);
+ const rows=readVariantRows();if(rows.length<=1)return;
+ const index=[...$("variant-rows").querySelectorAll(".variant-row")].indexOf(e.target.closest(".variant-row"));
+ rows.splice(index,1);variantRows(rows);
 });
 async function loadProducts(){
  let onlineLoaded=false;
@@ -104,23 +114,21 @@ function downloadProducts(message="已下載 products.json，請上傳到 GitHub
 }
 function render(){
  $("count").textContent=`（${products.length} 件）`;
- $("product-list").innerHTML=products.length?products.map(p=>`<div class="product-row"><div><strong>${esc(p.productCode)}｜${esc(p.name)}</strong><small>NT$ ${Number(p.price).toLocaleString("zh-TW")}　${esc(p.brand||"未分類廠牌")}｜${esc(p.functionCategory||"未分類功能")}　${esc(p.desc||"")}<br>${p.variants.map(v=>`${esc(v.name)}：${v.stock===null?"未設定":v.stock+" 件"}`).join("　／　")}</small></div><div class="row-actions"><button class="light" data-edit="${p.id}">修改</button><button class="delete" data-delete="${p.id}">刪除</button></div></div>`).join(""):'<p class="hint">目前沒有商品，請使用上方表單新增。</p>';
+ $("product-list").innerHTML=products.length?products.map(p=>`<div class="product-row"><div><strong>${esc(p.name)}</strong><small>${esc(p.brand||"未分類廠牌")}｜${esc(p.functionCategory||"未分類功能")}　${esc(p.desc||"")}<br>${p.variants.map(v=>`${esc(v.name)}：NT$ ${Number(v.price??p.price??0).toLocaleString("zh-TW")}`).join("　／　")}</small></div><div class="row-actions"><button class="light" data-edit="${p.id}">修改</button><button class="delete" data-delete="${p.id}">刪除</button></div></div>`).join(""):'<p class="hint">目前沒有商品，請使用上方表單新增。</p>';
 }
 function reset(){
  $("product-form").reset();selectedProductImage="";$("image-preview").hidden=true;$("image-preview").innerHTML="";
  $("edit-id").value="";$("form-title").textContent="新增商品";$("submit-btn").textContent="＋ 加入商品清單";$("cancel-edit").hidden=true;
- variantRows([{name:"一般規格",barcode:"",stock:0}]);
+ variantRows([{name:"一般規格",barcode:"",price:"",stock:0}]);
 }
 $("product-form").addEventListener("submit",e=>{
  e.preventDefault();
  const id=Number($("edit-id").value)||Math.max(0,...products.map(p=>Number(p.id)||0))+1;
- const variants=[...$("variant-rows").querySelectorAll(".variant-row")].map(r=>({name:r.querySelector(".variant-name").value.trim(),barcode:r.querySelector(".variant-barcode").value.trim(),stock:Number(r.querySelector(".variant-stock").value)}));
- if(!variants.length||variants.some(v=>!v.name||!Number.isInteger(v.stock)||v.stock<0)){$("status").textContent="請填寫每個規格名稱及有效的庫存整數。";return}
- const productCode=$("product-code").value.trim();
- if(products.some(p=>p.productCode===productCode&&Number(p.id)!==id)){$("status").textContent="商品編號已存在，請使用不同編號。";return}
+ const variants=readVariantRows();
+ if(!variants.length||variants.some(v=>!v.name||!Number.isInteger(v.price)||v.price<0)){$("status").textContent="請填寫每個規格名稱及有效的價格（0 元以上整數）。";return}
  const existing=products.find(x=>Number(x.id)===id)||{};
- const p={...existing,id,productCode,brand:$("brand").value.trim(),functionCategory:$("function-category").value.trim(),name:$("name").value.trim(),price:Number($("price").value),desc:$("desc").value.trim(),image:$("image").value.trim(),url:$("url").value.trim(),category:existing.category||"writing",variants};
- if(!p.productCode||!p.name||!Number.isFinite(p.price)||p.price<0){$("status").textContent="請確認商品編號、名稱與價格。";return}
+ const p={...existing,id,brand:$("brand").value.trim(),functionCategory:$("function-category").value.trim(),name:$("name").value.trim(),price:variants[0].price,desc:$("desc").value.trim(),image:$("image").value.trim(),url:$("url").value.trim(),category:existing.category||"writing",variants};
+ if(!p.name){$("status").textContent="請填寫商品名稱。";return}
  let i=products.findIndex(x=>Number(x.id)===id);i>=0?products[i]=p:products.push(p);
  reset();render();saveProductDraft();$("status").textContent="商品已儲存。可繼續新增或修改其他商品，全部完成後再按「下載更新檔」一次下載 products.json。";
 });
@@ -128,13 +136,13 @@ $("product-list").addEventListener("click",e=>{
  let eb=e.target.closest("[data-edit]"),db=e.target.closest("[data-delete]");
  if(eb){
   let p=products.find(x=>Number(x.id)===Number(eb.dataset.edit));if(!p)return;
-  fields.forEach(k=>{const value=p[k==="function-category"?"functionCategory":k];$(k==="productCode"?"product-code":k).value=(k==="url"&&value==="#")?"":(value??"")});
+  fields.forEach(k=>{const value=p[k==="function-category"?"functionCategory":k];$(k).value=(k==="url"&&value==="#")?"":(value??"")});
   $("edit-id").value=p.id;$("form-title").textContent="修改商品";$("submit-btn").textContent="儲存修改";$("cancel-edit").hidden=false;
-  variantRows(p.variants||[{name:"一般規格",barcode:"",stock:0}]);const editTarget=$("form-title");const top=editTarget.getBoundingClientRect().top+window.pageYOffset-90;window.scrollTo({top:Math.max(0,top),behavior:"smooth"});setTimeout(()=>{editTarget.focus?.({preventScroll:true});$("product-code").focus({preventScroll:true});},450);
+  variantRows(p.variants||[{name:"一般規格",barcode:"",price:p.price??0,stock:null}]);const editTarget=$("form-title");const top=editTarget.getBoundingClientRect().top+window.pageYOffset-90;window.scrollTo({top:Math.max(0,top),behavior:"smooth"});setTimeout(()=>{$("name").focus({preventScroll:true});},450);
  }
  if(db){
   let id=Number(db.dataset.delete),p=products.find(x=>Number(x.id)===id);
-  if(p&&confirm(`確定刪除「${p.productCode}｜${p.name}」？刪除後請下載 products.json 並上傳 GitHub 才會正式移除。`)){
+  if(p&&confirm(`確定刪除「${p.name}」？刪除後請下載 products.json 並上傳 GitHub 才會正式移除。`)){
    products=products.filter(p=>Number(p.id)!==id);if(Number($("edit-id").value)===id)reset();render();saveProductDraft();$("status").textContent="商品已刪除。可繼續修改其他商品，全部完成後再按「下載更新檔」一次下載 products.json。";
   }
  }
@@ -148,7 +156,7 @@ $("import-file").onchange=async e=>{
  catch{$("status").textContent="匯入失敗，請選擇正確的 products.json。"}
  e.target.value="";
 };
-variantRows([{name:"一般規格",barcode:"",stock:0}]);
+variantRows([{name:"一般規格",barcode:"",price:"",stock:0}]);
 
 // 商品庫存試算表匯入：以每個規格的國際條碼對應庫存，只修改 variants[].stock。
 const inventoryBarcodeAliases=["國際條碼","商品國際條碼","商品條碼","條碼","條碼號碼","EAN","EAN13","EAN-13","UPC","Barcode","Barcode No","Barcode Number","GTIN"];
@@ -212,7 +220,7 @@ $("inventory-sync-btn")?.addEventListener("click",()=>{
  for(const item of report.plans)item.variant.stock=item.stock;
  const intact=preserved===JSON.stringify(dataWithoutStock(products));
  if(!intact){products=JSON.parse(beforeSync).map(normalizeProduct);render();$("inventory-status").textContent="安全檢查未通過：除庫存以外的商品資料有變動，已還原原資料並停止套用。請重新載入 products.json 後再試。";return;}
- render();saveProductDraft();$("inventory-status").textContent=`庫存同步完成：已更新 ${report.plans.length} 個規格。安全檢查確認商品名稱、編號、品牌、價格、圖片、介紹、查詢網址、規格及國際條碼均未變動。請再按「下載更新檔」下載 products.json。`;
+ render();saveProductDraft();$("inventory-status").textContent=`庫存同步完成：已更新 ${report.plans.length} 個規格。安全檢查確認商品名稱、品牌、各規格價格、圖片、介紹、查詢網址、規格及國際條碼均未變動。請再按「下載更新檔」下載 products.json。`;
  $("inventory-sync-btn").disabled=true;
 });
 $("inventory-cancel-btn")?.addEventListener("click",()=>{$("inventory-mapping-area").hidden=true;inventorySourceRows=[];inventoryHeaders=[];inventorySourceName="";$("inventory-status").textContent="已取消庫存匯入。";});

@@ -10,9 +10,11 @@ async function init(){
  renderSummary();
  if(!cart.length){$("checkout-status").textContent="選購清單是空的，請返回商品頁加入商品。";$("checkout-submit").disabled=true}
 }
-function subtotal(){return cart.reduce((s,x)=>s+Number(PRODUCTS.find(p=>Number(p.id)===Number(x.id)).price)*x.qty,0)}
+function selectedVariant(p,name){return (p.variants||[{name:"一般規格",price:p.price,stock:null}]).find(v=>String(v.name||"一般規格")===String(name||"一般規格"))||(p.variants||[])[0]||{price:p.price};}
+function variantPrice(p,v){const n=Number(v?.price??p.price??0);return Number.isFinite(n)&&n>=0?n:0}
+function subtotal(){return cart.reduce((s,x)=>{const p=PRODUCTS.find(p=>Number(p.id)===Number(x.id)),v=selectedVariant(p,x.variant);return s+variantPrice(p,v)*x.qty},0)}
 function renderSummary(){
- $("checkout-items").innerHTML=cart.length?cart.map(x=>{const p=PRODUCTS.find(p=>Number(p.id)===Number(x.id));return `<div class="checkout-item"><span>${escapeHtml(p.name)}<br><small>${escapeHtml(x.variant||"一般規格")} × ${x.qty}</small></span><strong>${money(Number(p.price)*x.qty)}</strong></div>`}).join(""):'<p>目前沒有商品。</p>';
+ $("checkout-items").innerHTML=cart.length?cart.map(x=>{const p=PRODUCTS.find(p=>Number(p.id)===Number(x.id)),v=selectedVariant(p,x.variant),price=variantPrice(p,v);return `<div class="checkout-item"><span>${escapeHtml(p.name)}<br><small>${escapeHtml(x.variant||"一般規格")}｜${money(price)} × ${x.qty}</small></span><strong>${money(price*x.qty)}</strong></div>`}).join(""):'<p>目前沒有商品。</p>';
  $("checkout-subtotal").textContent=money(subtotal());updateTotal();
 }
 function updateTotal(){const fee=Number(document.querySelector('[name="shippingFee"]').value||0);$("checkout-shipping").textContent=money(fee);$("checkout-grand-total").textContent=money(subtotal()+fee)}
@@ -79,7 +81,7 @@ $("checkout-form").addEventListener("submit",async e=>{
  const f=new FormData(e.currentTarget),fee=Number(f.get("shippingFee")),productAmount=subtotal();
  if(!/^\d{6}$/.test(String(f.get("storeId")||""))||!String(f.get("storeName")||"").trim()||!selectedStore||selectedStore.id!==String(f.get("storeId")||"")){$("checkout-status").textContent="請先搜尋並選擇 7-ELEVEN 門市，系統會自動帶入門市名稱及地址。";return}
  if(productAmount+fee<55||productAmount+fee>20000){$("checkout-status").textContent="商品金額加運費需介於 55 至 20,000 元。";return}
- const items=cart.map(x=>{const p=PRODUCTS.find(p=>Number(p.id)===Number(x.id));const variantName=x.variant||"一般規格";const v=(p.variants||[]).find(v=>String(v.name||"一般規格")===variantName)||{};return{productCode:p.productCode||("P"+p.id),name:p.name,variant:variantName,barcode:String(v.barcode||v.internationalBarcode||""),quantity:x.qty,unitPrice:Number(p.price),amount:Number(p.price)*x.qty}});
+ const items=cart.map(x=>{const p=PRODUCTS.find(p=>Number(p.id)===Number(x.id));const variantName=x.variant||"一般規格";const v=selectedVariant(p,variantName)||{};const unitPrice=variantPrice(p,v);return{productCode:p.productCode||("P"+p.id),name:p.name,variant:variantName,barcode:String(v.barcode||v.internationalBarcode||""),quantity:x.qty,unitPrice,amount:unitPrice*x.qty}});
  const order={orderId:"XAFW"+Date.now(),createdAt:new Date().toISOString(),recipient:String(f.get("recipient")).trim(),phone:String(f.get("phone")).trim(),email:String(f.get("email")).trim(),storeId:String(f.get("storeId")).trim(),storeName:String(f.get("storeName")||"").trim(),storeAddress:String(f.get("storeAddress")||"").trim(),temperature:f.get("temperature"),items,productAmount,shippingFee:fee,totalAmount:productAmount+fee,note:String(f.get("note")||""),social:String(f.get("social")||"")};
  const btn=$("checkout-submit");btn.disabled=true;btn.textContent="送出中…";$("checkout-status").textContent="正在送出訂單…";
  try{
