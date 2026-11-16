@@ -22,20 +22,22 @@
   },
   {
     "id": 5,
+    "productCode": "P0005",
+    "brand": "PENTEL",
+    "functionCategory": "自動鉛筆",
     "name": "PENTEL PG-METAL350 自動鉛筆",
-    "desc": "PG315｜0.5mm 製圖筆",
     "price": 99,
-    "tag": "經典選品",
+    "tag": "",
+    "desc": "PG315｜0.5mm 製圖筆",
     "symbol": "PG",
     "image": "",
-    "url": "",
+    "url": "#",
     "category": "writing",
-    "productCode": "P0005",
     "variants": [
       {
         "name": "一般規格",
-        "barcode": "",
-        "stock": null
+        "barcode": "4902778247518",
+        "stock": 10
       }
     ]
   },
