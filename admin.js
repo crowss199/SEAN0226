@@ -64,13 +64,13 @@ function normalizeProduct(p){
 }
 function readVariantRows(){
  return [...$("variant-rows").querySelectorAll(".variant-row")].map(r=>{
-  const stockValue=r.querySelector(".variant-stock-preserved").value;
+  const stockValue=r.querySelector(".variant-stock").value.trim();
   const priceValue=r.querySelector(".variant-price").value.trim();
   return {name:r.querySelector(".variant-name").value.trim(),barcode:r.querySelector(".variant-barcode").value.trim(),price:priceValue===""?NaN:Number(priceValue),stock:stockValue===""?null:Math.max(0,Number(stockValue)||0)};
  });
 }
 function variantRows(list=[{name:"一般規格",barcode:"",price:"",stock:0}]){
- $("variant-rows").innerHTML=list.map((v,i)=>`<div class="variant-row"><label>規格名稱<input class="variant-name" maxlength="60" required value="${esc(v.name)}" placeholder="例如：0.5mm 黑色"></label><label>國際條碼（選填）<input class="variant-barcode" inputmode="numeric" maxlength="32" value="${esc(v.barcode||"")}" placeholder="例如：4710000000000"></label><label>規格價格（元）<input class="variant-price" type="number" min="0" step="1" required value="${v.price===undefined||v.price===null?"":esc(v.price)}" placeholder="例如：45"></label><input class="variant-stock-preserved" type="hidden" value="${v.stock===null||v.stock===undefined?"":esc(v.stock)}"><button type="button" class="delete remove-variant" aria-label="刪除此規格" ${list.length===1?"disabled":""}>刪除</button></div>`).join("");
+ $("variant-rows").innerHTML=list.map((v,i)=>`<div class="variant-row"><label>規格名稱<input class="variant-name" maxlength="60" required value="${esc(v.name)}" placeholder="例如：0.5mm 黑色"></label><label>國際條碼（選填）<input class="variant-barcode" inputmode="numeric" maxlength="32" value="${esc(v.barcode||"")}" placeholder="例如：4710000000000"></label><label>規格價格（元）<input class="variant-price" type="number" min="0" step="1" required value="${v.price===undefined||v.price===null?"":esc(v.price)}" placeholder="例如：45"></label><label>庫存數量<input class="variant-stock" type="number" min="0" step="1" value="${v.stock===null||v.stock===undefined?0:esc(v.stock)}" placeholder="例如：20"></label><button type="button" class="delete remove-variant" aria-label="刪除此規格" ${list.length===1?"disabled":""}>刪除</button></div>`).join("");
 }
 $("add-variant").addEventListener("click",()=>{
  const list=readVariantRows();list.push({name:"",barcode:"",price:"",stock:0});variantRows(list);

@@ -44,3 +44,8 @@
 /* V21：規格編輯改為名稱、國際條碼、價格；庫存由條碼同步隱藏保存 */
 .variant-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 140px auto!important}
 @media(max-width:700px){.variant-row{grid-template-columns:1fr!important}.variant-row label:nth-child(2){border-left:0;border-top:1px solid #e3e6de;padding:9px 0 0}.variant-row button{grid-column:auto!important}}
+
+/* V24：每個商品規格直接顯示可編輯庫存 */
+.variant-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 120px 110px auto!important}
+.variant-row label:nth-child(3),.variant-row label:nth-child(4){border-left:1px solid #e3e6de;padding-left:9px}
+@media(max-width:700px){.variant-row{grid-template-columns:1fr 1fr!important}.variant-row label:nth-child(2),.variant-row label:nth-child(3),.variant-row label:nth-child(4){border-left:0;border-top:1px solid #e3e6de;padding:9px 0 0}.variant-row button{grid-column:auto!important}}
