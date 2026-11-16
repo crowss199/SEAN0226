@@ -119,3 +119,8 @@ body{background:#fff;color:var(--ink)}
 .product-details .product-mall-link{display:inline-block;margin-top:12px;border:0;border-bottom:1px solid #bfc7b9;padding:0 0 4px;color:#56624f;font-size:11px;text-decoration:none}
 .product-details .product-mall-link:hover{color:#2f3c2c;border-color:#68745f}
 @media(max-width:700px){.product-details .product-mall-link{font-size:9px;margin-top:9px}}
+
+/* V22：缺貨規格仍可選取查看；只停用加入選購清單 */
+.variant-select{cursor:pointer;pointer-events:auto;position:relative;z-index:1}
+.variant-select option{color:#34382f;background:#fff}
+.add-button:disabled{opacity:.55;cursor:not-allowed;color:#9a9a92}

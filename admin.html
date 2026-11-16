@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>商品與訂單管理｜翔安富文具</title><link rel="stylesheet" href="admin.css"></head><body>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>商品與訂單管理｜翔安富文具</title><link rel="stylesheet" href="admin.css"><link rel="stylesheet" href="theme.css"></head><body>
 <header><a href="index.html">← 回到官網</a><strong>翔安富文具｜商品與訂單管理</strong><span>PRODUCT ADMIN</span></header>
 <main>
 <section id="login-panel" class="login-card"><p class="eyebrow">PRIVATE AREA</p><h1>管理員登入</h1><p>請輸入管理密碼以開啟商品管理工具。</p><form id="login-form"><label>管理員 ID<input id="admin-id" type="text" autocomplete="username" required placeholder="輸入管理員 ID"></label>
@@ -17,8 +17,10 @@
 </section>
 <section class="panel" id="faq-panel"><h2>常見問題頁面管理</h2><p class="hint">可新增、修改、刪除常見問題。編輯完成後按「下載 faq.json」，再上傳到 GitHub Repository 根目錄覆蓋舊檔，常見問題頁面就會更新。</p><div id="faq-admin-list"></div><div class="actions"><button class="light" type="button" id="faq-add">＋ 新增常見問題</button><button class="primary" type="button" id="faq-download">下載 faq.json</button></div><p class="status" id="faq-status" aria-live="polite"></p></section>
 <section class="panel" id="logo-panel">
- <h2>官網商標上傳</h2>
- <p class="hint">上傳商標圖片後，下載 site-settings.json 並上傳 GitHub 根目錄，官網頁首與頁尾就會顯示商標。</p>
+ <h2>官網外觀設定</h2>
+ <p class="hint">可選擇整個官網的顏色主題及上傳商標。設定完成後下載 site-settings.json，並上傳 GitHub Repository 根目錄。</p>
+ <label>官網主題<select id="theme-select"><option value="sage">日系奶油綠</option><option value="navy">質感深藍金</option><option value="terracotta">霧感暖橘</option><option value="sky">清爽天空藍</option></select></label>
+ <p class="hint">主題會套用至首頁、商品頁、購物車、結帳頁、常見問題及訂單完成頁。</p>
  <label>選擇商標圖片<input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
  <div id="logo-preview" class="upload-preview" hidden></div>
  <div class="actions"><button class="primary" id="logo-download" type="button">下載 site-settings.json</button></div>
@@ -86,4 +88,4 @@
  <p class="hint">訂單資料只儲存在目前這台裝置、目前瀏覽器的本機儲存空間，不會自動同步到其他裝置或 GitHub。請妥善保管匯出的訂單檔，避免公開上傳含有客戶個資的資料。</p>
 </section>
 <section class="notice"><strong>安全與更新說明</strong><p>此頁的密碼檢查在瀏覽器前端執行，密碼可能被查看原始碼的人找到，僅適合低風險、非機密用途。此頁不會直接寫入 GitHub。商品修改會暫存在目前瀏覽器，不會自動下載；全部完成後請手動按「下載更新檔」一次下載 products.json，再上傳至 Repository 根目錄並覆蓋舊檔。</p></section>
-</div></main><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="admin-config.js"></script><script src="admin.js"></script></body></html>
+</div></main><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="admin-config.js"></script><script src="theme.js"></script><script src="admin.js"></script></body></html>

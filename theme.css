@@ -1,0 +1,45 @@
+/* 翔安富文具：可切換的全站主題色票 */
+body[data-theme="sage"]{--ink:#34382f;--muted:#85877d;--line:#e7e3d9;--paper:#fbfaf6;--cream:#f2efe6;--sage:#78816d;--sage-dark:#59634f;--clay:#b68b70;--surface:#fff;--soft:#f5f6f1;--accent-border:#dfe3da}
+body[data-theme="navy"]{--ink:#293448;--muted:#7e8998;--line:#dce3eb;--paper:#f8fafc;--cream:#e9eff5;--sage:#c09b58;--sage-dark:#17365d;--clay:#bd9a62;--surface:#fff;--soft:#eef3f8;--accent-border:#d5e0eb}
+body[data-theme="terracotta"]{--ink:#49362f;--muted:#907d72;--line:#eadbd1;--paper:#fffaf5;--cream:#f7e9df;--sage:#c47a58;--sage-dark:#a85f43;--clay:#d6a078;--surface:#fff;--soft:#fbf0e8;--accent-border:#ecd8cb}
+body[data-theme="sky"]{--ink:#314456;--muted:#7f93a3;--line:#dbe7f0;--paper:#f8fbfe;--cream:#eaf3f9;--sage:#7199b9;--sage-dark:#507fa2;--clay:#9ab9d1;--surface:#fff;--soft:#eff6fb;--accent-border:#d7e5ef}
+body[data-theme]{background:var(--paper);color:var(--ink)}
+body[data-theme] .announcement{background:var(--sage-dark)}
+body[data-theme] .site-header{background:var(--paper);border-color:var(--line)}
+body[data-theme] .brand-mark{border-color:var(--sage);color:var(--sage-dark)}
+body[data-theme] .desktop-nav{color:var(--muted)}
+body[data-theme] .cart-count{background:var(--sage-dark)}
+body[data-theme] .hero,body[data-theme] .notice-board-section,body[data-theme] .story-section{background:var(--cream)}
+body[data-theme] .eyebrow,body[data-theme] .hero h1 em,body[data-theme] .product-price,body[data-theme] .add-button{color:var(--sage-dark)}
+body[data-theme] .eyebrow i{background:var(--sage)}
+body[data-theme] .button-dark,body[data-theme] .header-shop-link{background:var(--sage-dark);color:#fff}
+body[data-theme] .product-image{background:var(--soft)}
+body[data-theme] .product-image:before{border-color:var(--accent-border)}
+body[data-theme] .product-actions,body[data-theme] .site-footer{border-color:var(--line)}
+body[data-theme] .product-details p,body[data-theme] .section-heading>p,body[data-theme] .section-heading h2 span{color:var(--muted)}
+body[data-theme] .product-mall-link,body[data-theme] .text-link{color:var(--sage-dark);border-color:var(--sage)}
+body[data-theme] .story-art,body[data-theme] .guide-grid article,body[data-theme] .guide-cta,body[data-theme] .guide-note{background:var(--soft)}
+body[data-theme] .story-circle,body[data-theme] .guide-grid i{border-color:var(--sage);color:var(--sage-dark)}
+body[data-theme] .cart-drawer{background:var(--paper)}
+body[data-theme] .checkout-open,body[data-theme] .checkout-submit{background:var(--sage-dark);color:#fff}
+body[data-theme] .notice-board{background:var(--surface);border-color:var(--line)}
+body[data-theme] .notice-board:before{background:var(--sage-dark)}
+body[data-theme] .notice-board-heading,body[data-theme] .notice-board h1{color:var(--sage-dark)}
+body[data-theme] .store-map-button{border-color:var(--sage-dark);color:var(--sage-dark)}
+body[data-theme].checkout-page{background:var(--paper);color:var(--ink)}
+body[data-theme] .checkout-panel,body[data-theme] .faq-item,body[data-theme] .success-order{background:var(--surface);border-color:var(--line)}
+body[data-theme] .checkout-heading h1,body[data-theme] .success-main h1,body[data-theme] .faq-item h2{color:var(--ink)}
+body[data-theme] .checkout-submit,body[data-theme] .faq-back{background:var(--sage-dark);border-color:var(--sage-dark);color:#fff}
+body[data-theme] .store-result{border-color:var(--line);background:var(--surface);color:var(--ink)}
+body[data-theme] .store-result:hover,body[data-theme] .store-result:focus,body[data-theme] .store-selected{border-color:var(--sage);background:var(--soft);color:var(--ink)}
+body[data-theme] .store-search-input,body[data-theme] .checkout-form input,body[data-theme] .checkout-form select,body[data-theme] .checkout-form textarea{border-color:var(--accent-border)}
+body[data-theme] .success-mark{border-color:var(--sage);color:var(--sage-dark)}
+body[data-theme] .messenger-float{background:var(--sage-dark)}
+/* 管理頁同步預覽主題 */
+body[data-theme] header{background:var(--paper);border-color:var(--line)}
+body[data-theme] .panel,body[data-theme] .login-card{background:var(--surface);border-color:var(--line);color:var(--ink)}
+body[data-theme] .primary{background:var(--sage-dark);color:#fff}
+body[data-theme] .light{background:var(--soft);color:var(--sage-dark)}
+body[data-theme] .variant-editor,body[data-theme] .inventory-summary,body[data-theme] .file-pick{background:var(--soft);border-color:var(--line)}
+body[data-theme] .variant-row input,body[data-theme] form input:not([type=hidden]),body[data-theme] select,body[data-theme] textarea{border-color:var(--accent-border)}
+body[data-theme] .notice{background:var(--soft);border-color:var(--sage);color:var(--ink)}

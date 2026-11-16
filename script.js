@@ -6,13 +6,14 @@ const safeUrl=s=>{try{let u=new URL(s||"#",location.href);return ["http:","https
 async function loadProducts(){try{let r=await fetch("./products.json");if(!r.ok)throw Error();PRODUCTS=await r.json();populateProductFilters();renderProducts();renderCart()}catch{$("product-grid").innerHTML='<p class="empty-cart">商品資料暫時無法載入，請稍後重新整理。</p>'}}
 function getVariants(p){return Array.isArray(p.variants)&&p.variants.length?p.variants:[{name:"一般規格",price:Number(p.price)||0,stock:null}]}
 function variantPrice(p,v){const n=Number(v?.price??p.price??0);return Number.isFinite(n)&&n>=0?n:0}
+function variantInStock(v){return v?.stock===null||v?.stock===undefined||v?.stock===""||Number(v.stock)>0}
 function populateProductFilters(){const brands=[...new Set(PRODUCTS.map(p=>p.brand).filter(Boolean))].sort(),funcs=[...new Set(PRODUCTS.map(p=>p.functionCategory).filter(Boolean))].sort();$("brand-filter").innerHTML='<option value="">全部廠牌</option>'+brands.map(x=>`<option>${esc(x)}</option>`).join("");$("function-filter").innerHTML='<option value="">全部功能</option>'+funcs.map(x=>`<option>${esc(x)}</option>`).join("")}
 function renderProducts(){
- let cat=document.querySelector(".category-tab.active")?.dataset.category||"all",q=$("product-search").value.trim().toLowerCase(),brand=$("brand-filter").value,func=$("function-filter").value;
- let arr=PRODUCTS.filter(p=>(cat==="all"||p.category===cat)&&(!brand||p.brand===brand)&&(!func||p.functionCategory===func)&&(p.name+p.desc+p.brand+p.functionCategory).toLowerCase().includes(q));
+ let q=$("product-search").value.trim().toLowerCase(),brand=$("brand-filter").value,func=$("function-filter").value;
+ let arr=PRODUCTS.filter(p=>(!brand||p.brand===brand)&&(!func||p.functionCategory===func)&&(p.name+p.desc+p.brand+p.functionCategory).toLowerCase().includes(q));
  $("product-grid").innerHTML=arr.length?arr.map(p=>{
-  let vs=getVariants(p),available=vs.some(v=>v.stock===null||v.stock===undefined||Number(v.stock)>0),stockUrl=String(p.url||"").trim(),stockHref=stockUrl?safeUrl(stockUrl):"#",stockLink=stockUrl&&stockHref!=="#"?`<a class="product-mall-link" href="${esc(stockHref)}" target="_blank" rel="noopener noreferrer">庫存查詢 ↗</a>`:"";
-  return `<article class="product-card"><div class="product-image">${p.image?`<img src="${safeUrl(p.image)}" alt="${esc(p.name)}" loading="lazy">`:`<span class="product-image-empty" aria-hidden="true"></span>`}</div><div class="product-details"><h3>${esc(p.name)}</h3><p>${esc(p.desc||"")}</p><span class="product-price" data-price-for="${p.id}">規格價格 ${money(variantPrice(p,vs[0]))}</span><label class="variant-select-label">選擇規格<select class="variant-select" data-variant-for="${p.id}">${vs.map((v,i)=>`<option value="${i}" ${(v.stock!==null&&v.stock!==undefined&&Number(v.stock)<=0)?"disabled":""}>${esc(v.name)}｜${money(variantPrice(p,v))}</option>`).join("")}</select></label>${stockLink}</div><div class="product-actions"><button class="add-button" data-add="${p.id}" ${available?"":"disabled"}>${available?"加入選購清單 ＋":"目前缺貨"}</button></div></article>`
+  let vs=getVariants(p),firstAvailable=variantInStock(vs[0]),stockUrl=String(p.url||"").trim(),stockHref=stockUrl?safeUrl(stockUrl):"#",stockLink=stockUrl&&stockHref!=="#"?`<a class="product-mall-link" href="${esc(stockHref)}" target="_blank" rel="noopener noreferrer">庫存查詢 ↗</a>`:"";
+  return `<article class="product-card"><div class="product-image">${p.image?`<img src="${safeUrl(p.image)}" alt="${esc(p.name)}" loading="lazy">`:`<span class="product-image-empty" aria-hidden="true"></span>`}</div><div class="product-details"><h3>${esc(p.name)}</h3><p>${esc(p.desc||"")}</p><span class="product-price" data-price-for="${p.id}">規格價格 ${money(variantPrice(p,vs[0]))}</span><label class="variant-select-label">選擇規格<select class="variant-select" data-variant-for="${p.id}">${vs.map((v,i)=>`<option value="${i}">${esc(v.name)}｜${money(variantPrice(p,v))}${variantInStock(v)?"":"（缺貨）"}</option>`).join("")}</select></label>${stockLink}</div><div class="product-actions"><button class="add-button" data-add="${p.id}" ${firstAvailable?"":"disabled"}>${firstAvailable?"加入選購清單 ＋":"此規格目前缺貨"}</button></div></article>`
  }).join(""):'<p class="no-results">找不到符合的商品。</p>';
 }
 function persist(){localStorage.setItem(CART_KEY,JSON.stringify(cart));renderCart()}
@@ -27,6 +28,7 @@ $("product-grid").addEventListener("change",e=>{
  const sel=e.target.closest(".variant-select");if(!sel)return;
  const id=Number(sel.dataset.variantFor),p=PRODUCTS.find(x=>Number(x.id)===id),v=getVariants(p)[Number(sel.value)];
  const priceNode=document.querySelector(`[data-price-for="${id}"]`);if(priceNode&&v)priceNode.textContent=`規格價格 ${money(variantPrice(p,v))}`;
+ const addButton=document.querySelector(`[data-add="${id}"]`);if(addButton){const available=variantInStock(v);addButton.disabled=!available;addButton.textContent=available?"加入選購清單 ＋":"此規格目前缺貨";}
 });
 $("product-grid").addEventListener("click",e=>{
  let b=e.target.closest("[data-add]");if(!b)return;e.preventDefault();
@@ -52,7 +54,7 @@ $("cart-items").addEventListener("click",e=>{
 function openCart(){$("cart-drawer").classList.add("open");$("overlay").classList.add("show")}function closeCart(){$("cart-drawer").classList.remove("open");$("overlay").classList.remove("show")}
 $("open-cart").onclick=openCart;$("close-cart").onclick=closeCart;$("overlay").onclick=closeCart;
 $("menu-toggle").onclick=()=>{let n=$("main-nav").classList.toggle("open");$("menu-toggle").setAttribute("aria-expanded",String(n))};$("main-nav").onclick=e=>{if(e.target.closest("a"))$("main-nav").classList.remove("open")};
-document.querySelectorAll("[data-category]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-category]").forEach(x=>x.classList.toggle("active",x===b));renderProducts()});$("product-search").oninput=renderProducts;$("brand-filter").onchange=renderProducts;$("function-filter").onchange=renderProducts;$("year").textContent=new Date().getFullYear();loadProducts();
+$("product-search").oninput=renderProducts;$("brand-filter").onchange=renderProducts;$("function-filter").onchange=renderProducts;$("year").textContent=new Date().getFullYear();loadProducts();
 // Checkout now lives on a dedicated page.
 $("checkout-open").addEventListener("click",()=>{
  if(!cart.length){alert("請先加入商品再結帳。");return}

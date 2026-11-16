@@ -253,11 +253,18 @@ $("export-orders").onclick=()=>{let rows=getOrders(),cols=orderFields.map(f=>f.l
 $("clear-orders").onclick=()=>{if(confirm("確定清空這台裝置瀏覽器內的所有匯入訂單？此操作無法復原。")){saveOrders([]);renderOrders()}};
 
 // Website logo uploader; exported as site-settings.json.
-let siteSettings={logo:""};
+let siteSettings={logo:"",theme:"sage"};
 async function loadSiteSettingsAdmin(){
- try{const r=await fetch("./site-settings.json",{cache:"no-store"});if(r.ok)siteSettings=await r.json()}catch{}
+ try{const r=await fetch("./site-settings.json",{cache:"no-store"});if(r.ok)siteSettings={...siteSettings,...await r.json()}}catch{}
+ if(!["sage","navy","terracotta","sky"].includes(siteSettings.theme))siteSettings.theme="sage";
+ document.body.dataset.theme=siteSettings.theme;
+ $("theme-select").value=siteSettings.theme;
  if(siteSettings.logo){$("logo-preview").hidden=false;$("logo-preview").innerHTML=`<img alt="目前官網商標" src="${siteSettings.logo}">`;}
 }
+$("theme-select").addEventListener("change",e=>{
+ siteSettings.theme=e.target.value;document.body.dataset.theme=siteSettings.theme;
+ $("logo-status").textContent="主題已預覽。請按「下載 site-settings.json」，再上傳 GitHub 才會套用至顧客頁面。";
+});
 $("logo-file").addEventListener("change",async e=>{
  const file=e.target.files[0];if(!file)return;
  try{
@@ -270,7 +277,7 @@ $("logo-file").addEventListener("change",async e=>{
 $("logo-download").addEventListener("click",()=>{
  const blob=new Blob([JSON.stringify(siteSettings,null,2)],{type:"application/json;charset=utf-8"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="site-settings.json";a.click();URL.revokeObjectURL(a.href);
- $("logo-status").textContent="已下載 site-settings.json，請上傳至 GitHub Repository 根目錄。";
+ $("logo-status").textContent="已下載 site-settings.json（包含主題及商標設定），請上傳至 GitHub Repository 根目錄。";
 });
 
 if(sessionStorage.getItem(AUTH_KEY)==="yes")showAdmin();
