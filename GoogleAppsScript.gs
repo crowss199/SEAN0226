@@ -345,10 +345,38 @@ function doPost(e) {
     appendOrderItemDetails_(d, orderDate);
     let mailStatus = "寄送失敗";
     try {
+      const displayStoreName = String(d.storeName || "（未提供門市名稱）").trim();
+      const displayStoreId = String(d.storeId || "（未提供門市編號）").trim();
+      const displayStoreAddress = String(d.storeAddress || "（未提供門市地址）").trim();
+      const orderMailBody = "您好，您的訂單已成立。\n" +
+        "訂單編號：" + d.orderId + "\n" +
+        "商品：" + goods + "\n" +
+        "商品金額：NT$" + d.productAmount + "\n" +
+        "運費：NT$" + d.shippingFee + "\n" +
+        "應付金額：NT$" + d.totalAmount + "\n\n" +
+        "7-11取件門市名稱：" + displayStoreName + "\n" +
+        "7-11取件門市編號：" + displayStoreId + "\n" +
+        "7-11取件門市地址：" + displayStoreAddress + "\n\n" +
+        "我們將於出貨狀態更新時再寄送通知。\n翔安富文具";
+      const orderMailHtml = '<div style="font-family:Arial,Microsoft JhengHei,sans-serif;line-height:1.8;color:#222;max-width:620px">' +
+        '<h2 style="font-size:20px">您的訂單已成立</h2>' +
+        '<p>您好，您的訂單已成立。</p>' +
+        '<div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin:16px 0">' +
+        '<p><strong>訂單編號：</strong>' + escapeShipmentHtml_(d.orderId) + '</p>' +
+        '<p><strong>商品：</strong>' + escapeShipmentHtml_(goods) + '</p>' +
+        '<p><strong>商品金額：</strong>NT$' + escapeShipmentHtml_(d.productAmount) + '</p>' +
+        '<p><strong>運費：</strong>NT$' + escapeShipmentHtml_(d.shippingFee) + '</p>' +
+        '<p><strong>應付金額：</strong>NT$' + escapeShipmentHtml_(d.totalAmount) + '</p>' +
+        '<hr style="border:0;border-top:1px solid #eee;margin:14px 0">' +
+        '<p><strong>7-11取件門市名稱：</strong>' + escapeShipmentHtml_(displayStoreName) + '</p>' +
+        '<p><strong>7-11取件門市編號：</strong>' + escapeShipmentHtml_(displayStoreId) + '</p>' +
+        '<p><strong>7-11取件門市地址：</strong>' + escapeShipmentHtml_(displayStoreAddress) + '</p>' +
+        '</div><p>我們將於出貨狀態更新時再寄送通知。</p><p>翔安富文具</p></div>';
       MailApp.sendEmail({
         to: String(d.email).trim(),
         subject: "翔安富文具｜訂單成立通知 " + String(d.orderId),
-        body: "您好，您的訂單已成立。\n訂單編號：" + d.orderId + "\n商品：" + goods + "\n商品金額：NT$" + d.productAmount + "\n運費：NT$" + d.shippingFee + "\n應付金額：NT$" + d.totalAmount + "\n取件門市店號：" + d.storeId + "\n我們將於出貨狀態更新時再寄送通知。\n翔安富文具"
+        body: orderMailBody,
+        htmlBody: orderMailHtml
       });
       mailStatus = "已提交寄送";
     } catch (mailErr) {

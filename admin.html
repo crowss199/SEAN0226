@@ -27,17 +27,17 @@
 <section class="panel"><h2 id="form-title">新增商品</h2><form id="product-form"><input type="hidden" id="edit-id">
 <div class="two"><label>商品編號＊<input id="product-code" required maxlength="40" placeholder="例如：A001"></label><label>商品名稱＊<input id="name" required maxlength="100" placeholder="例如：三菱 Jetstream 原子筆"></label></div>
 <div class="two"><label>廠牌／品牌<input id="brand" maxlength="60" placeholder="例如：三菱、百樂、PLUS"></label><label>功能分類<input id="function-category" maxlength="60" placeholder="例如：書寫、修正、收納"></label></div>
-<div class="two"><label>商品價格（元）＊<input id="price" type="number" min="0" step="1" required placeholder="例如：45"></label><label>商品標籤<input id="tag" maxlength="24" placeholder="例如：新品推薦"></label></div>
+<label>商品價格（元）＊<input id="price" type="number" min="0" step="1" required placeholder="例如：45"></label>
 <label>商品介紹<input id="desc" maxlength="120" placeholder="例如：適合日常書寫"></label>
 <div class="variant-editor"><div class="variant-heading"><strong>商品規格、國際條碼與庫存＊</strong><button type="button" class="light" id="add-variant">＋ 新增規格</button></div><p class="hint">每個規格都有獨立的「國際條碼」輸入欄位（例如 EAN-13／UPC），請直接填入包裝上的條碼數字；沒有條碼可留空。顧客選擇規格後才能加入購物車。</p><div id="variant-rows"></div></div>
-<div class="two"><label>卡片文字圖案<input id="symbol" maxlength="12" placeholder="例如：UNI"></label><label>商品圖片網址<input id="image" type="text" placeholder="可貼 HTTPS 圖片網址，或使用下方上傳圖片"></label>
+<div class="two"><label>商品圖片網址<input id="image" type="text" placeholder="可貼 HTTPS 圖片網址，或使用下方上傳圖片"></label>
 <label>上傳商品圖片<input id="image-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><small class="hint">支援 PNG／JPG／WEBP／GIF，建議單張 1 MB 以下。</small></label>
 <div id="image-preview" class="upload-preview" hidden></div></div>
-<label>商品頁面網址（選填）<input id="url" type="url" placeholder="可留空"></label>
+<label>庫存查詢（選填）<input id="url" type="url" placeholder="可貼上商品庫存查詢網址；官網商品卡片會顯示可點選連結"></label>
 <div class="actions"><button class="primary" type="submit" id="submit-btn">＋ 加入商品清單</button><button type="button" id="cancel-edit" class="light" hidden>取消編輯</button></div><p class="hint">＊必填。每個規格都要填寫規格名稱與庫存整數（可填 0）。按下加入商品或儲存修改後只會暫存變更，不會自動下載；全部商品修改完成後，再按「下載更新檔」一次下載。</p><p class="status" id="status" aria-live="polite"></p></form></section>
 <section class="panel" id="inventory-sync-panel">
  <h2>商品庫存同步（依國際條碼）</h2>
- <p class="hint">從商品庫存試算表下載 Excel（.xlsx／.xls）或 CSV，匯入後系統會用「國際條碼」比對官網各商品規格，只更新對應規格的庫存，不會更動商品名稱、價格或其他資料。建議試算表至少有「國際條碼」及「庫存」兩欄，第一個工作表需包含欄位標題。</p>
+ <p class="hint">從商品庫存試算表下載 Excel（.xlsx／.xls）或 CSV，匯入後系統會用「國際條碼」比對官網各商品規格，只更新對應規格的庫存，不會更動商品名稱、商品編號、價格、圖片、描述、規格、國際條碼或其他商品資料。建議試算表至少有「國際條碼」及「庫存」兩欄，第一個工作表需包含欄位標題。</p>
  <div class="inventory-actions">
   <label class="file-pick">選擇商品庫存試算表<input type="file" id="inventory-file" accept=".xlsx,.xls,.csv" /></label>
   <button class="light" type="button" id="inventory-template">下載庫存表範例 CSV</button>
@@ -53,7 +53,7 @@
   <div class="actions"><button class="primary" id="inventory-sync-btn" type="button" disabled>套用匹配庫存至官網商品</button><button class="light" id="inventory-cancel-btn" type="button">取消匯入</button></div>
   <p id="inventory-status" class="status" aria-live="polite"></p>
  </div>
- <p class="hint">套用後庫存先暫存在目前瀏覽器，請再按本頁「下載更新檔」取得 products.json，並上傳 GitHub Repository 根目錄覆蓋舊檔，官網才會更新。GitHub Pages 靜態網站無法直接改寫線上檔案，因此不會在匯入時自動發布。</p>
+ <p class="hint">套用後只會修改匹配規格的庫存數字；其餘商品資料會原樣保留。更新結果先暫存在目前瀏覽器，請再按「下載更新檔」取得完整 products.json，並上傳 GitHub Repository 根目錄。GitHub Pages 靜態網站無法直接改寫線上檔案，因此不會在匯入時自動發布。</p>
 </section>
 <section class="panel"><div class="list-head"><h2>目前商品 <span id="count"></span></h2><div class="actions"><button class="light" id="import-btn" type="button">匯入 products.json</button><input type="file" id="import-file" accept=".json,application/json" hidden><button class="primary" id="download-btn" type="button">下載更新檔</button></div></div><p class="hint">新增、修改或刪除商品都不會自動下載。所有修改會暫存在目前瀏覽器；全部完成後，請按右上方「下載更新檔」一次下載 products.json，再上傳 GitHub 根目錄覆蓋舊檔。</p><div id="product-list" class="product-list"></div></section>
 <section class="panel" id="stores-panel">

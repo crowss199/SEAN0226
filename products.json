@@ -1,45 +1,58 @@
 [
   {
+    "id": 1,
+    "name": "三菱鉛筆 UNI HI-UNI GRCT 自動鉛筆筆芯",
+    "desc": "0.3mm／0.5mm｜細緻書寫",
+    "price": 75,
+    "tag": "人氣選物",
+    "symbol": "UNI",
+    "image": "",
+    "url": "",
+    "category": "writing"
+  },
+  {
+    "id": 2,
+    "name": "KOKUYO Campus Junior Pencil 自動鉛筆",
+    "desc": "六角軸｜0.9mm／1.3mm",
+    "price": 45,
+    "tag": "KOKUYO",
+    "symbol": "K",
+    "image": "",
+    "url": "",
+    "category": "writing"
+  },
+  {
+    "id": 3,
+    "name": "三菱 Jetstream EDGE 原子筆筆芯",
+    "desc": "SXR-203-28｜0.28mm",
+    "price": 50,
+    "tag": "順手書寫",
+    "symbol": "JET",
+    "image": "",
+    "url": "",
+    "category": "writing"
+  },
+  {
     "id": 4,
-    "productCode": "P0004",
-    "brand": "三菱鉛筆",
-    "functionCategory": "削鉛筆機",
     "name": "三菱 2.0mm 筆芯專用削鉛筆機",
-    "price": 157,
-    "tag": "",
     "desc": "型號 DPS600｜實用配件",
+    "price": 157,
+    "tag": "文具配件",
     "symbol": "2.0",
-    "image": "https://images.plurk.com/358VmWEauPy5kugAgdFp73.jpg",
-    "url": "https://docs.google.com/spreadsheets/d/1NBtKCn8Z4HNASak8g4EFGLNocnAYtR_mOIy-S_nU2e8/edit?gid=0#gid=0&range=E2",
-    "category": "writing",
-    "variants": [
-      {
-        "name": "單個",
-        "barcode": "4902778013328",
-        "stock": 10
-      }
-    ]
+    "image": "",
+    "url": "",
+    "category": "accessory"
   },
   {
     "id": 5,
-    "productCode": "P0005",
-    "brand": "PENTEL",
-    "functionCategory": "自動鉛筆",
     "name": "PENTEL PG-METAL350 自動鉛筆",
-    "price": 99,
-    "tag": "",
     "desc": "PG315｜0.5mm 製圖筆",
+    "price": 99,
+    "tag": "經典選品",
     "symbol": "PG",
     "image": "",
-    "url": "#",
-    "category": "writing",
-    "variants": [
-      {
-        "name": "一般規格",
-        "barcode": "4902778247518",
-        "stock": 10
-      }
-    ]
+    "url": "",
+    "category": "writing"
   },
   {
     "id": 6,
@@ -50,14 +63,6 @@
     "symbol": "4+1",
     "image": "",
     "url": "",
-    "category": "writing",
-    "productCode": "P0006",
-    "variants": [
-      {
-        "name": "一般規格",
-        "barcode": "",
-        "stock": null
-      }
-    ]
+    "category": "writing"
   }
 ]

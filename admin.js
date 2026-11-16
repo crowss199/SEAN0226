@@ -52,7 +52,7 @@ $("toggle-password").addEventListener("click",()=>{
  button.textContent=visible?"顯示":"隱藏";
 });
 $("logout").addEventListener("click",logout);
-const fields=["productCode","name","brand","function-category","price","tag","desc","symbol","image","url"];
+const fields=["productCode","name","brand","function-category","price","desc","image","url"];
 function normalizeProduct(p){
  const variants=Array.isArray(p.variants)&&p.variants.length?p.variants:[{name:"一般規格",stock:null}];
  return {...p,productCode:String(p.productCode||p.code||("P"+String(p.id).padStart(4,"0"))),variants:variants.map((v,i)=>({name:String(v.name||("規格"+(i+1))),barcode:String(v.barcode||""),stock:v.stock===null||v.stock===undefined?null:Math.max(0,Number(v.stock)||0)}))};
@@ -71,7 +71,28 @@ $("variant-rows").addEventListener("click",e=>{
  const list=rows.filter(r=>r!==e.target.closest(".variant-row")).map(r=>({name:r.querySelector(".variant-name").value,barcode:r.querySelector(".variant-barcode").value.trim(),stock:Number(r.querySelector(".variant-stock").value)||0}));
  variantRows(list);
 });
-async function loadProducts(){try{let r=await fetch("./products.json",{cache:"no-store"});if(!r.ok)throw Error();products=(await r.json()).map(normalizeProduct);}catch{products=[];$("status").textContent="無法讀取 products.json；可按匯入按鈕載入商品資料。"}try{const draft=localStorage.getItem("xiangAnProductDraft");if(draft){const parsed=JSON.parse(draft);if(Array.isArray(parsed)){products=parsed.map(normalizeProduct);$("status").textContent="已還原上次尚未下載的商品修改。全部修改完成後，請按「下載更新檔」一次下載。"}}}catch{}render()}
+async function loadProducts(){
+ let onlineLoaded=false;
+ try{const r=await fetch("./products.json",{cache:"no-store"});if(!r.ok)throw Error();const data=await r.json();if(!Array.isArray(data))throw Error();products=data.map(normalizeProduct);onlineLoaded=true;}
+ catch{products=[];$("status").textContent="無法讀取 products.json；可按匯入按鈕載入商品資料。";}
+ try{
+  const draft=localStorage.getItem("xiangAnProductDraft");
+  if(draft){
+   const parsed=JSON.parse(draft);
+   if(Array.isArray(parsed)){
+    const draftProducts=parsed.map(normalizeProduct);
+    const same=JSON.stringify(draftProducts)===JSON.stringify(products);
+    if(!onlineLoaded){products=draftProducts;$("status").textContent="目前無法讀取線上商品檔，已載入本機草稿。請確認商品資料後再下載更新檔。";}
+    else if(!same){
+     const useDraft=confirm("發現上次尚未下載的本機商品草稿。載入草稿可能覆蓋目前 GitHub 的最新商品資料。\n\n按「確定」載入本機草稿；按「取消」保留目前線上 products.json 商品資料並刪除舊草稿。");
+     if(useDraft){products=draftProducts;$("status").textContent="已載入本機未下載草稿。確認商品資料後，請下載更新檔。";}
+     else{localStorage.removeItem("xiangAnProductDraft");$("status").textContent="已保留目前線上 products.json 商品資料，未載入舊草稿。";}
+    }
+   }
+  }
+ }catch(err){console.warn("本機商品草稿讀取失敗",err)}
+ render();
+}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function saveProductDraft(){try{localStorage.setItem("xiangAnProductDraft",JSON.stringify(products));}catch{}}
 function downloadProducts(message="已下載 products.json，請上傳到 GitHub Repository 根目錄並覆蓋舊檔。"){
@@ -97,7 +118,8 @@ $("product-form").addEventListener("submit",e=>{
  if(!variants.length||variants.some(v=>!v.name||!Number.isInteger(v.stock)||v.stock<0)){$("status").textContent="請填寫每個規格名稱及有效的庫存整數。";return}
  const productCode=$("product-code").value.trim();
  if(products.some(p=>p.productCode===productCode&&Number(p.id)!==id)){$("status").textContent="商品編號已存在，請使用不同編號。";return}
- const p={id,productCode,brand:$("brand").value.trim(),functionCategory:$("function-category").value.trim(),name:$("name").value.trim(),price:Number($("price").value),tag:$("tag").value.trim(),desc:$("desc").value.trim(),symbol:$("symbol").value.trim()||"文具",image:$("image").value.trim(),url:$("url").value.trim()||"#",category:"writing",variants};
+ const existing=products.find(x=>Number(x.id)===id)||{};
+ const p={...existing,id,productCode,brand:$("brand").value.trim(),functionCategory:$("function-category").value.trim(),name:$("name").value.trim(),price:Number($("price").value),desc:$("desc").value.trim(),image:$("image").value.trim(),url:$("url").value.trim(),category:existing.category||"writing",variants};
  if(!p.productCode||!p.name||!Number.isFinite(p.price)||p.price<0){$("status").textContent="請確認商品編號、名稱與價格。";return}
  let i=products.findIndex(x=>Number(x.id)===id);i>=0?products[i]=p:products.push(p);
  reset();render();saveProductDraft();$("status").textContent="商品已儲存。可繼續新增或修改其他商品，全部完成後再按「下載更新檔」一次下載 products.json。";
@@ -106,7 +128,7 @@ $("product-list").addEventListener("click",e=>{
  let eb=e.target.closest("[data-edit]"),db=e.target.closest("[data-delete]");
  if(eb){
   let p=products.find(x=>Number(x.id)===Number(eb.dataset.edit));if(!p)return;
-  fields.forEach(k=>$(k==="productCode"?"product-code":k==="function-category"?"function-category":k).value=p[k==="function-category"?"functionCategory":k]??"");
+  fields.forEach(k=>{const value=p[k==="function-category"?"functionCategory":k];$(k==="productCode"?"product-code":k).value=(k==="url"&&value==="#")?"":(value??"")});
   $("edit-id").value=p.id;$("form-title").textContent="修改商品";$("submit-btn").textContent="儲存修改";$("cancel-edit").hidden=false;
   variantRows(p.variants||[{name:"一般規格",barcode:"",stock:0}]);const editTarget=$("form-title");const top=editTarget.getBoundingClientRect().top+window.pageYOffset-90;window.scrollTo({top:Math.max(0,top),behavior:"smooth"});setTimeout(()=>{editTarget.focus?.({preventScroll:true});$("product-code").focus({preventScroll:true});},450);
  }
@@ -122,7 +144,7 @@ $("download-btn").onclick=()=>downloadProducts("已一次下載目前全部商�
 $("import-btn").onclick=()=>$("import-file").click();
 $("import-file").onchange=async e=>{
  let f=e.target.files[0];if(!f)return;
- try{let data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error();products=data.map(normalizeProduct);render();saveProductDraft();$("status").textContent="匯入成功。可繼續修改，全部完成後再按「下載更新檔」一次下載 products.json。"}
+ try{let data=JSON.parse(await f.text());if(!Array.isArray(data))throw Error();if(!confirm("匯入 products.json 會以檔案內容取代目前管理頁載入的整份商品清單。建議先下載備份。確定要取代嗎？"))return;products=data.map(normalizeProduct);render();saveProductDraft();$("status").textContent="匯入成功。請確認商品資料後，再下載更新檔。"}
  catch{$("status").textContent="匯入失敗，請選擇正確的 products.json。"}
  e.target.value="";
 };
@@ -183,8 +205,14 @@ $("inventory-stock-col")?.addEventListener("change",renderInventoryPreview);
 $("inventory-sync-btn")?.addEventListener("click",()=>{
  const report=inventoryReport();if(!report.plans.length){$("inventory-status").textContent="沒有可套用的唯一條碼匹配資料。";return;}
  if(!confirm(`準備更新 ${report.plans.length} 個官網商品規格的庫存。未匹配及重複條碼不會修改。確定套用？`))return;
+ // 只寫入 variants[].stock，不重建或覆蓋商品物件及其其他欄位。
+ const beforeSync=JSON.stringify(products);
+ const dataWithoutStock=list=>list.map(product=>{const copy=JSON.parse(JSON.stringify(product));(copy.variants||[]).forEach(variant=>delete variant.stock);return copy;});
+ const preserved=JSON.stringify(dataWithoutStock(products));
  for(const item of report.plans)item.variant.stock=item.stock;
- render();saveProductDraft();$("inventory-status").textContent=`庫存同步完成：已更新 ${report.plans.length} 個規格。請再按「下載更新檔」下載 products.json，並上傳 GitHub 才會更新官網。`;
+ const intact=preserved===JSON.stringify(dataWithoutStock(products));
+ if(!intact){products=JSON.parse(beforeSync).map(normalizeProduct);render();$("inventory-status").textContent="安全檢查未通過：除庫存以外的商品資料有變動，已還原原資料並停止套用。請重新載入 products.json 後再試。";return;}
+ render();saveProductDraft();$("inventory-status").textContent=`庫存同步完成：已更新 ${report.plans.length} 個規格。安全檢查確認商品名稱、編號、品牌、價格、圖片、介紹、查詢網址、規格及國際條碼均未變動。請再按「下載更新檔」下載 products.json。`;
  $("inventory-sync-btn").disabled=true;
 });
 $("inventory-cancel-btn")?.addEventListener("click",()=>{$("inventory-mapping-area").hidden=true;inventorySourceRows=[];inventoryHeaders=[];inventorySourceName="";$("inventory-status").textContent="已取消庫存匯入。";});
