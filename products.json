@@ -14,13 +14,13 @@
         "name": "0.3MM",
         "barcode": "4902778013328",
         "price": 75,
-        "stock": null
+        "stock": 5
       },
       {
         "name": "0.5MM",
         "barcode": "4902778247518",
         "price": 75,
-        "stock": 0
+        "stock": 5
       }
     ],
     "brand": "三菱鉛筆",
@@ -41,13 +41,13 @@
         "name": "0.9mm",
         "barcode": "4902778260586",
         "price": 100,
-        "stock": null
+        "stock": 7
       },
       {
         "name": "1.3mm",
         "barcode": "4902778260579",
         "price": 105,
-        "stock": 0
+        "stock": 4
       }
     ],
     "brand": "KOKUYO",
