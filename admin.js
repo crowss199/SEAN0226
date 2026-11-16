@@ -256,7 +256,7 @@ $("clear-orders").onclick=()=>{if(confirm("確定清空這台裝置瀏覽器內�
 let siteSettings={logo:"",theme:"sage"};
 async function loadSiteSettingsAdmin(){
  try{const r=await fetch("./site-settings.json",{cache:"no-store"});if(r.ok)siteSettings={...siteSettings,...await r.json()}}catch{}
- if(!["sage","navy","terracotta","sky"].includes(siteSettings.theme))siteSettings.theme="sage";
+ if(!["sage","navy","terracotta","sky","plum","rose","charcoal","lemon"].includes(siteSettings.theme))siteSettings.theme="sage";
  document.body.dataset.theme=siteSettings.theme;
  $("theme-select").value=siteSettings.theme;
  if(siteSettings.logo){$("logo-preview").hidden=false;$("logo-preview").innerHTML=`<img alt="目前官網商標" src="${siteSettings.logo}">`;}

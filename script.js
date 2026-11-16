@@ -12,8 +12,8 @@ function renderProducts(){
  let q=$("product-search").value.trim().toLowerCase(),brand=$("brand-filter").value,func=$("function-filter").value;
  let arr=PRODUCTS.filter(p=>(!brand||p.brand===brand)&&(!func||p.functionCategory===func)&&(p.name+p.desc+p.brand+p.functionCategory).toLowerCase().includes(q));
  $("product-grid").innerHTML=arr.length?arr.map(p=>{
-  let vs=getVariants(p),firstAvailable=variantInStock(vs[0]),stockUrl=String(p.url||"").trim(),stockHref=stockUrl?safeUrl(stockUrl):"#",stockLink=stockUrl&&stockHref!=="#"?`<a class="product-mall-link" href="${esc(stockHref)}" target="_blank" rel="noopener noreferrer">庫存查詢 ↗</a>`:"";
-  return `<article class="product-card"><div class="product-image">${p.image?`<img src="${safeUrl(p.image)}" alt="${esc(p.name)}" loading="lazy">`:`<span class="product-image-empty" aria-hidden="true"></span>`}</div><div class="product-details"><h3>${esc(p.name)}</h3><p>${esc(p.desc||"")}</p><span class="product-price" data-price-for="${p.id}">規格價格 ${money(variantPrice(p,vs[0]))}</span><label class="variant-select-label">選擇規格<select class="variant-select" data-variant-for="${p.id}">${vs.map((v,i)=>`<option value="${i}">${esc(v.name)}｜${money(variantPrice(p,v))}${variantInStock(v)?"":"（缺貨）"}</option>`).join("")}</select></label>${stockLink}</div><div class="product-actions"><button class="add-button" data-add="${p.id}" ${firstAvailable?"":"disabled"}>${firstAvailable?"加入選購清單 ＋":"此規格目前缺貨"}</button></div></article>`
+  let vs=getVariants(p),stockUrl=String(p.url||"").trim(),stockHref=stockUrl?safeUrl(stockUrl):"#",stockLink=stockUrl&&stockHref!=="#"?`<a class="product-mall-link" href="${esc(stockHref)}" target="_blank" rel="noopener noreferrer">庫存查詢 ↗</a>`:"";
+  return `<article class="product-card"><div class="product-image">${p.image?`<img src="${safeUrl(p.image)}" alt="${esc(p.name)}" loading="lazy">`:`<span class="product-image-empty" aria-hidden="true"></span>`}</div><div class="product-details"><h3>${esc(p.name)}</h3><p>${esc(p.desc||"")}</p><span class="product-price" data-price-for="${p.id}">規格價格 ${money(variantPrice(p,vs[0]))}</span><label class="variant-select-label">選擇規格<select class="variant-select" data-variant-for="${p.id}">${vs.map((v,i)=>`<option value="${i}">${esc(v.name)}｜${money(variantPrice(p,v))}</option>`).join("")}</select></label>${stockLink}</div><div class="product-actions"><label class="product-quantity-label">數量 <input class="product-quantity" type="number" min="1" step="1" value="1" data-quantity-for="${p.id}"></label><button class="add-button" data-add="${p.id}">加入購物車 ＋</button></div></article>`
  }).join(""):'<p class="no-results">找不到符合的商品。</p>';
 }
 function persist(){localStorage.setItem(CART_KEY,JSON.stringify(cart));renderCart()}
@@ -28,25 +28,22 @@ $("product-grid").addEventListener("change",e=>{
  const sel=e.target.closest(".variant-select");if(!sel)return;
  const id=Number(sel.dataset.variantFor),p=PRODUCTS.find(x=>Number(x.id)===id),v=getVariants(p)[Number(sel.value)];
  const priceNode=document.querySelector(`[data-price-for="${id}"]`);if(priceNode&&v)priceNode.textContent=`規格價格 ${money(variantPrice(p,v))}`;
- const addButton=document.querySelector(`[data-add="${id}"]`);if(addButton){const available=variantInStock(v);addButton.disabled=!available;addButton.textContent=available?"加入選購清單 ＋":"此規格目前缺貨";}
+ 
 });
 $("product-grid").addEventListener("click",e=>{
  let b=e.target.closest("[data-add]");if(!b)return;e.preventDefault();
  let id=Number(b.dataset.add),p=PRODUCTS.find(p=>Number(p.id)===id),sel=document.querySelector(`[data-variant-for="${id}"]`),variant=getVariants(p)[Number(sel?.value||0)];
  if(!variant){alert("請先選擇商品規格。");return}
- let x=cart.find(v=>Number(v.id)===id&&v.variant===variant.name),limit=variant.stock===null||variant.stock===undefined?Infinity:Number(variant.stock);
- if(x&&x.qty>=limit){alert("此規格庫存不足。");return}
- if(!x&&limit<1){alert("此規格目前缺貨。");return}
- x?x.qty++:cart.push({id,variant:variant.name,qty:1});persist();
+ const qtyInput=document.querySelector(`[data-quantity-for="${id}"]`),addQty=Math.max(1,Math.floor(Number(qtyInput?.value)||1));
+ let x=cart.find(v=>Number(v.id)===id&&v.variant===variant.name);
+ x?x.qty+=addQty:cart.push({id,variant:variant.name,qty:addQty});persist();
  let old=b.textContent;b.textContent="已加入 ✓";setTimeout(()=>b.textContent=old,900);
 });
 $("cart-items").addEventListener("click",e=>{
  let q=e.target.closest("[data-qty]"),r=e.target.closest("[data-remove]");
  if(q){
   let x=cart.find(v=>Number(v.id)===Number(q.dataset.qty)&&v.variant===q.dataset.variant);
-  if(x){let p=PRODUCTS.find(p=>Number(p.id)===Number(x.id)),v=selectedVariant(p,x.variant),limit=v?.stock===null||v?.stock===undefined?Infinity:Number(v?.stock??0);
-   if(Number(q.dataset.delta)>0&&x.qty>=limit){alert("此規格庫存不足。");return}
-   x.qty+=Number(q.dataset.delta);if(x.qty<1)cart=cart.filter(v=>v!==x);persist();
+  if(x){x.qty+=Number(q.dataset.delta);if(x.qty<1)cart=cart.filter(v=>v!==x);persist();
   }
  }
  if(r){cart=cart.filter(v=>!(Number(v.id)===Number(r.dataset.remove)&&v.variant===r.dataset.variant));persist()}

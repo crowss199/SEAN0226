@@ -43,3 +43,13 @@ body[data-theme] .light{background:var(--soft);color:var(--sage-dark)}
 body[data-theme] .variant-editor,body[data-theme] .inventory-summary,body[data-theme] .file-pick{background:var(--soft);border-color:var(--line)}
 body[data-theme] .variant-row input,body[data-theme] form input:not([type=hidden]),body[data-theme] select,body[data-theme] textarea{border-color:var(--accent-border)}
 body[data-theme] .notice{background:var(--soft);border-color:var(--sage);color:var(--ink)}
+/* V23：新增四款主題 */
+body[data-theme="plum"]{--ink:#40334b;--muted:#8b8194;--line:#e5ddec;--paper:#fbf9fd;--cream:#f0eaf5;--sage:#9a82ad;--sage-dark:#665078;--clay:#bba5c8;--surface:#fff;--soft:#f5f0f8;--accent-border:#e1d6e9}
+body[data-theme="rose"]{--ink:#50383d;--muted:#9b858a;--line:#efdee2;--paper:#fffafb;--cream:#f8ecef;--sage:#c98d9c;--sage-dark:#985e70;--clay:#dfb4bd;--surface:#fff;--soft:#fcf1f3;--accent-border:#efdce1}
+body[data-theme="charcoal"]{--ink:#303236;--muted:#85898e;--line:#dfe1e3;--paper:#f7f8f9;--cream:#e9ebed;--sage:#747b83;--sage-dark:#424950;--clay:#a6abb0;--surface:#fff;--soft:#eef0f2;--accent-border:#d9dde0}
+body[data-theme="lemon"]{--ink:#49432e;--muted:#958d6d;--line:#eee7c9;--paper:#fffdf4;--cream:#f8f1d8;--sage:#c3ad5d;--sage-dark:#83712e;--clay:#d7c47e;--surface:#fff;--soft:#fbf6e5;--accent-border:#eee4bd}
+/* V23：按鈕文字保持高對比，數量可直接輸入 */
+body[data-theme] .add-button{background:var(--sage-dark)!important;color:#fff!important;border:1px solid var(--sage-dark)!important;font-weight:700;opacity:1!important}
+.product-quantity-label{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink);white-space:nowrap}
+.product-quantity{width:58px;min-height:36px;padding:5px;border:1px solid var(--accent-border,var(--line));border-radius:4px;background:#fff;color:#222;text-align:center;font-size:14px}
+.product-actions{gap:10px}

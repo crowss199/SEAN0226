@@ -1,5 +1,5 @@
 (function(){
- const allowed=new Set(["sage","navy","terracotta","sky"]);
+ const allowed=new Set(["sage","navy","terracotta","sky","plum","rose","charcoal","lemon"]);
  const apply=name=>{document.body.dataset.theme=allowed.has(name)?name:"sage";};
  apply("sage");
  fetch("./site-settings.json",{cache:"no-store"})
