@@ -11,7 +11,7 @@ function setup() {
 
   // 全新工作表直接建立完整標題列；既有工作表只補欄，不重排或覆寫訂單資料。
   if (sh.getLastRow() === 0 || sh.getLastColumn() === 0) {
-    sh.getRange(1, 1, 1, HEADERS.length + 2).setValues([HEADERS.concat(["出貨通知狀態", "寄件編號"])]);
+    sh.getRange(1, 1, 1, HEADERS.length + 2).setValues([HEADERS.concat(["出貨通知狀態", "寄件編號", "折扣金額"])]);
     sh.setFrozenRows(1);
   } else {
     removeStoreNameAddressColumns_(sh);
@@ -20,6 +20,7 @@ function setup() {
     repairKnownShipmentHeaderCollision_(sh);
     ensureShipmentStatusColumn_(sh);
     ensureTrackingNumberColumn_(sh);
+    ensureDiscountColumn_(sh);
   }
 
   // 手機與寄件編號固定為純文字，保留開頭的 0 及英數字格式。
@@ -120,6 +121,11 @@ function ensureShipmentStatusColumn_(sh) {
 function ensureTrackingNumberColumn_(sh) {
   if (sh.getLastRow() === 0) return;
   appendHeaderColumn_(sh, "寄件編號", true);
+}
+
+function ensureDiscountColumn_(sh) {
+  if (sh.getLastRow() === 0) return;
+  appendHeaderColumn_(sh, "折扣金額", false);
 }
 
 // 建立或補齊訂單商品明細工作表。保留既有欄位及資料，不重排使用者欄位。
@@ -271,8 +277,9 @@ function sendShipmentNotificationForSelectedRow() {
       "7-11取件門市名稱：" + displayStoreName + "\n" +
       "7-11取件門市編號：" + displayStoreId + "\n" +
       "7-11取件門市地址：" + displayStoreAddress + "\n" +
-      "寄件編號：" + trackingNumber + "\n\n" +
-      "請留意物流及到店通知。\n翔安富文具";
+      "寄件編號：" + trackingNumber + "\n" +
+      "7-ELEVEN物流查詢：https://eservice.7-11.com.tw/e-tracking/search.aspx\n\n" +
+      "請開啟查詢頁並輸入寄件編號，即可查看配送進度。\n翔安富文具";
     const htmlBody = '<div style="font-family:Arial,Microsoft JhengHei,sans-serif;line-height:1.8;color:#222;max-width:620px">' +
       '<h2 style="font-size:20px">您的訂單已出貨</h2>' +
       '<p>您好 ' + escapeShipmentHtml_(recipient) + '，您的訂單已出貨。</p>' +
@@ -282,7 +289,8 @@ function sendShipmentNotificationForSelectedRow() {
       '<p><strong>7-11取件門市編號：</strong>' + escapeShipmentHtml_(displayStoreId) + '</p>' +
       '<p><strong>7-11取件門市地址：</strong>' + escapeShipmentHtml_(displayStoreAddress) + '</p>' +
       '<p><strong>寄件編號：</strong>' + escapeShipmentHtml_(trackingNumber) + '</p>' +
-      '</div><p>請留意物流及到店通知。</p><p>翔安富文具</p></div>';
+      '</div><p><a href="https://eservice.7-11.com.tw/e-tracking/search.aspx" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#087a42;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none">前往 7-ELEVEN 物流查詢</a></p>' +
+      '<p>開啟查詢頁後，請輸入上方寄件編號查詢配送進度。</p><p>翔安富文具</p></div>';
     MailApp.sendEmail({to:email,subject:"翔安富文具｜您的訂單已出貨 " + orderId,body:body,htmlBody:htmlBody});
     sh.getRange(row,statusCol).setValue("已寄送 " + new Date().toLocaleString("zh-TW") + "｜寄件編號：" + trackingNumber);
     if (orderStatusCol > 0) sh.getRange(row,orderStatusCol).setValue("已出貨");
@@ -322,6 +330,7 @@ function doPost(e) {
     repairKnownShipmentHeaderCollision_(sh);
     ensureShipmentStatusColumn_(sh);
     ensureTrackingNumberColumn_(sh);
+    ensureDiscountColumn_(sh);
     ensureOrderDetailSheet_();
 
     const ids = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 1).getDisplayValues().flat() : [];
@@ -340,8 +349,10 @@ function doPost(e) {
       String(d.orderId), orderDate, String(d.recipient),
       String(d.phone), String(d.email), "待寄送", String(d.storeId), String(d.temperature), goods,
       Number(d.productAmount), Number(d.shippingFee), String(d.note || ""),
-      JSON.stringify({social:String(d.social || ""),storeName:String(d.storeName || ""),storeAddress:String(d.storeAddress || "")}), "新訂單"
+      JSON.stringify({social:String(d.social || ""),storeName:String(d.storeName || ""),storeAddress:String(d.storeAddress || ""),discountAmount:Math.max(0,Number(d.discountAmount)||0),discountThreshold:Math.max(0,Number(d.discountThreshold)||0)}), "新訂單"
     ]]);
+    const discountCol=getHeaderColumn_(sh,"折扣金額");
+    if(discountCol>0)sh.getRange(newRow,discountCol).setValue(Math.max(0,Number(d.discountAmount)||0));
     appendOrderItemDetails_(d, orderDate);
     let mailStatus = "寄送失敗";
     try {
@@ -352,6 +363,7 @@ function doPost(e) {
         "訂單編號：" + d.orderId + "\n" +
         "商品：" + goods + "\n" +
         "商品金額：NT$" + d.productAmount + "\n" +
+        "滿額折扣：-NT$" + (Number(d.discountAmount)||0) + "\n" +
         "運費：NT$" + d.shippingFee + "\n" +
         "應付金額：NT$" + d.totalAmount + "\n\n" +
         "7-11取件門市名稱：" + displayStoreName + "\n" +
@@ -365,6 +377,7 @@ function doPost(e) {
         '<p><strong>訂單編號：</strong>' + escapeShipmentHtml_(d.orderId) + '</p>' +
         '<p><strong>商品：</strong>' + escapeShipmentHtml_(goods) + '</p>' +
         '<p><strong>商品金額：</strong>NT$' + escapeShipmentHtml_(d.productAmount) + '</p>' +
+        '<p><strong>滿額折扣：</strong>-NT$' + escapeShipmentHtml_(Number(d.discountAmount)||0) + '</p>' +
         '<p><strong>運費：</strong>NT$' + escapeShipmentHtml_(d.shippingFee) + '</p>' +
         '<p><strong>應付金額：</strong>NT$' + escapeShipmentHtml_(d.totalAmount) + '</p>' +
         '<hr style="border:0;border-top:1px solid #eee;margin:14px 0">' +

@@ -1,23 +1,24 @@
 const CART_KEY="xiangAnJapandiCart",ORDER_KEY="xiangAnLastOrder",STORE_CACHE_KEY="xiangAn711Stores",STORE_DATA_URL="https://raw.githubusercontent.com/Cojad/taiwan-7Eleven-store/master/stores.json",STORE_CUSTOM_URL="./stores-custom.json";
 const $=id=>document.getElementById(id),money=n=>"NT$ "+Number(n).toLocaleString("zh-TW");
-let PRODUCTS=[],cart=[],STORE_LIST=[],selectedStore=null;
+let PRODUCTS=[],cart=[],STORE_LIST=[],selectedStore=null,SITE_SETTINGS={discountTiers:[]};
 try{cart=JSON.parse(localStorage.getItem(CART_KEY)||"[]")}catch{cart=[]}
 async function init(){
  $("year").textContent=new Date().getFullYear();
  try{const r=await fetch("./products.json");if(!r.ok)throw Error();PRODUCTS=await r.json()}catch{$("checkout-items").innerHTML="<p>商品資料暫時無法載入，請返回商品頁稍後重試。</p>";return}
+ try{const sr=await fetch("./site-settings.json",{cache:"no-store"});if(sr.ok)SITE_SETTINGS={...SITE_SETTINGS,...await sr.json()}}catch{}
  cart=cart.filter(x=>PRODUCTS.some(p=>Number(p.id)===Number(x.id))&&Number(x.qty)>0);
- for(const x of cart){const p=PRODUCTS.find(p=>Number(p.id)===Number(x.id));const v=(p.variants||[{name:"一般規格",stock:null}]).find(v=>v.name===(x.variant||"一般規格"));if(!v||(v.stock!==null&&v.stock!==undefined&&Number(x.qty)>Number(v.stock))){$("checkout-status").textContent=`${p.name}（${x.variant||"一般規格"}）庫存不足，請返回商品頁調整數量。`; $("checkout-submit").disabled=true;}}
  renderSummary();
  if(!cart.length){$("checkout-status").textContent="選購清單是空的，請返回商品頁加入商品。";$("checkout-submit").disabled=true}
 }
 function selectedVariant(p,name){return (p.variants||[{name:"一般規格",price:p.price,stock:null}]).find(v=>String(v.name||"一般規格")===String(name||"一般規格"))||(p.variants||[])[0]||{price:p.price};}
 function variantPrice(p,v){const n=Number(v?.price??p.price??0);return Number.isFinite(n)&&n>=0?n:0}
 function subtotal(){return cart.reduce((s,x)=>{const p=PRODUCTS.find(p=>Number(p.id)===Number(x.id)),v=selectedVariant(p,x.variant);return s+variantPrice(p,v)*x.qty},0)}
+function discountFor(amount){const tiers=(Array.isArray(SITE_SETTINGS.discountTiers)?SITE_SETTINGS.discountTiers:[]).filter(t=>Number(t.threshold)>0&&Number(t.amount)>0).sort((a,b)=>Number(a.threshold)-Number(b.threshold));let chosen=null;for(const t of tiers){if(amount>=Number(t.threshold))chosen=t;}return chosen?{amount:Math.min(amount,Number(chosen.amount)),threshold:Number(chosen.threshold)}:{amount:0,threshold:0}}
 function renderSummary(){
  $("checkout-items").innerHTML=cart.length?cart.map(x=>{const p=PRODUCTS.find(p=>Number(p.id)===Number(x.id)),v=selectedVariant(p,x.variant),price=variantPrice(p,v);return `<div class="checkout-item"><span>${escapeHtml(p.name)}<br><small>${escapeHtml(x.variant||"一般規格")}｜${money(price)} × ${x.qty}</small></span><strong>${money(price*x.qty)}</strong></div>`}).join(""):'<p>目前沒有商品。</p>';
  $("checkout-subtotal").textContent=money(subtotal());updateTotal();
 }
-function updateTotal(){const fee=Number(document.querySelector('[name="shippingFee"]').value||0);$("checkout-shipping").textContent=money(fee);$("checkout-grand-total").textContent=money(subtotal()+fee)}
+function updateTotal(){const fee=Number(document.querySelector('[name="shippingFee"]').value||0),sub=subtotal(),discount=discountFor(sub);$("checkout-shipping").textContent=money(fee);$("checkout-discount-row").hidden=discount.amount<=0;$("checkout-discount").textContent="-"+money(discount.amount);$("checkout-discount-label").textContent=discount.amount?`滿 NT$${discount.threshold.toLocaleString("zh-TW")} 折扣`:"滿額折扣";$("checkout-grand-total").textContent=money(Math.max(0,sub-discount.amount)+fee)}
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 document.querySelector('[name="shippingFee"]').addEventListener("input",updateTotal);
 function clearSelectedStore(){
@@ -78,11 +79,11 @@ $("checkout-form").addEventListener("submit",async e=>{
  e.preventDefault();if(!cart.length)return;
  const endpoint=window.CHECKOUT_CONFIG?.WEB_APP_URL||"";
  if(!endpoint||endpoint.includes("請填入")){$("checkout-status").textContent="尚未設定 Google 試算表接收網址。";return}
- const f=new FormData(e.currentTarget),fee=Number(f.get("shippingFee")),productAmount=subtotal();
+ const f=new FormData(e.currentTarget),fee=Number(f.get("shippingFee")),productAmount=subtotal(),discount=discountFor(productAmount),totalAmount=Math.max(0,productAmount-discount.amount)+fee;
  if(!/^\d{6}$/.test(String(f.get("storeId")||""))||!String(f.get("storeName")||"").trim()||!selectedStore||selectedStore.id!==String(f.get("storeId")||"")){$("checkout-status").textContent="請先搜尋並選擇 7-ELEVEN 門市，系統會自動帶入門市名稱及地址。";return}
  if(productAmount+fee<55||productAmount+fee>20000){$("checkout-status").textContent="商品金額加運費需介於 55 至 20,000 元。";return}
  const items=cart.map(x=>{const p=PRODUCTS.find(p=>Number(p.id)===Number(x.id));const variantName=x.variant||"一般規格";const v=selectedVariant(p,variantName)||{};const unitPrice=variantPrice(p,v);return{productCode:p.productCode||("P"+p.id),name:p.name,variant:variantName,barcode:String(v.barcode||v.internationalBarcode||""),quantity:x.qty,unitPrice,amount:unitPrice*x.qty}});
- const order={orderId:"XAFW"+Date.now(),createdAt:new Date().toISOString(),recipient:String(f.get("recipient")).trim(),phone:String(f.get("phone")).trim(),email:String(f.get("email")).trim(),storeId:String(f.get("storeId")).trim(),storeName:String(f.get("storeName")||"").trim(),storeAddress:String(f.get("storeAddress")||"").trim(),temperature:f.get("temperature"),items,productAmount,shippingFee:fee,totalAmount:productAmount+fee,note:String(f.get("note")||""),social:String(f.get("social")||"")};
+ const order={orderId:"XAFW"+Date.now(),createdAt:new Date().toISOString(),recipient:String(f.get("recipient")).trim(),phone:String(f.get("phone")).trim(),email:String(f.get("email")).trim(),storeId:String(f.get("storeId")).trim(),storeName:String(f.get("storeName")||"").trim(),storeAddress:String(f.get("storeAddress")||"").trim(),temperature:f.get("temperature"),items,productAmount,discountAmount:discount.amount,discountThreshold:discount.threshold,shippingFee:fee,totalAmount,note:String(f.get("note")||""),social:String(f.get("social")||"")};
  const btn=$("checkout-submit");btn.disabled=true;btn.textContent="送出中…";$("checkout-status").textContent="正在送出訂單…";
  try{
   await fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(order)});
