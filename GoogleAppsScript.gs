@@ -349,7 +349,7 @@ function doPost(e) {
       String(d.orderId), orderDate, String(d.recipient),
       String(d.phone), String(d.email), "待寄送", String(d.storeId), String(d.temperature), goods,
       Number(d.productAmount), Number(d.shippingFee), String(d.note || ""),
-      JSON.stringify({social:String(d.social || ""),storeName:String(d.storeName || ""),storeAddress:String(d.storeAddress || ""),discountAmount:Math.max(0,Number(d.discountAmount)||0),discountThreshold:Math.max(0,Number(d.discountThreshold)||0)}), "新訂單"
+      JSON.stringify({social:String(d.social || ""),storeName:String(d.storeName || ""),storeAddress:String(d.storeAddress || ""),discountAmount:Math.max(0,Number(d.discountAmount)||0),discountThreshold:Math.max(0,Number(d.discountThreshold)||0),discountPercent:Math.max(0,Number(d.discountPercent)||0)}), "新訂單"
     ]]);
     const discountCol=getHeaderColumn_(sh,"折扣金額");
     if(discountCol>0)sh.getRange(newRow,discountCol).setValue(Math.max(0,Number(d.discountAmount)||0));
@@ -363,7 +363,7 @@ function doPost(e) {
         "訂單編號：" + d.orderId + "\n" +
         "商品：" + goods + "\n" +
         "商品金額：NT$" + d.productAmount + "\n" +
-        "滿額折扣：-NT$" + (Number(d.discountAmount)||0) + "\n" +
+        "滿額折扣（" + (Number(d.discountPercent)||0) + "%）：-NT$" + (Number(d.discountAmount)||0) + "\n" +
         "運費：NT$" + d.shippingFee + "\n" +
         "應付金額：NT$" + d.totalAmount + "\n\n" +
         "7-11取件門市名稱：" + displayStoreName + "\n" +
@@ -377,7 +377,7 @@ function doPost(e) {
         '<p><strong>訂單編號：</strong>' + escapeShipmentHtml_(d.orderId) + '</p>' +
         '<p><strong>商品：</strong>' + escapeShipmentHtml_(goods) + '</p>' +
         '<p><strong>商品金額：</strong>NT$' + escapeShipmentHtml_(d.productAmount) + '</p>' +
-        '<p><strong>滿額折扣：</strong>-NT$' + escapeShipmentHtml_(Number(d.discountAmount)||0) + '</p>' +
+        '<p><strong>滿額折扣（' + escapeShipmentHtml_(Number(d.discountPercent)||0) + '%）：</strong>-NT$' + escapeShipmentHtml_(Number(d.discountAmount)||0) + '</p>' +
         '<p><strong>運費：</strong>NT$' + escapeShipmentHtml_(d.shippingFee) + '</p>' +
         '<p><strong>應付金額：</strong>NT$' + escapeShipmentHtml_(d.totalAmount) + '</p>' +
         '<hr style="border:0;border-top:1px solid #eee;margin:14px 0">' +

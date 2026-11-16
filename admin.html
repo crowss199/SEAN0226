@@ -22,11 +22,11 @@
  <label>官網主題<select id="theme-select"><option value="sage">日系奶油綠</option><option value="navy">質感深藍金</option><option value="terracotta">霧感暖橘</option><option value="sky">清爽天空藍</option><option value="plum">優雅薰衣草紫</option><option value="rose">柔和櫻花粉</option><option value="charcoal">俐落石墨灰</option><option value="lemon">明亮奶油黃</option></select></label>
  <p class="hint">主題會套用至首頁、商品頁、購物車、結帳頁、常見問題及訂單完成頁。</p>
  <h3>滿額折扣設定</h3>
- <p class="hint">設定最多三組滿額折扣，結帳時依商品小計自動套用符合門檻的最高一級；折扣不包含運費。</p>
- <div class="two"><label>折扣門檻 1（元）<input id="discount-threshold-1" type="number" min="0" step="1" placeholder="例如 500"></label><label>折抵金額 1（元）<input id="discount-amount-1" type="number" min="0" step="1" placeholder="例如 30"></label></div>
- <div class="two"><label>折扣門檻 2（元）<input id="discount-threshold-2" type="number" min="0" step="1" placeholder="例如 1000"></label><label>折抵金額 2（元）<input id="discount-amount-2" type="number" min="0" step="1" placeholder="例如 80"></label></div>
- <div class="two"><label>折扣門檻 3（元）<input id="discount-threshold-3" type="number" min="0" step="1" placeholder="例如 2000"></label><label>折抵金額 3（元）<input id="discount-amount-3" type="number" min="0" step="1" placeholder="例如 200"></label></div>
- <p class="hint">例如：滿 500 折 30、滿 1,000 折 80。留空或填 0 代表該級不啟用。</p>
+ <p class="hint">設定最多三組滿額百分比折扣，結帳時依商品小計自動套用符合門檻的最高一級；折扣不包含運費。</p>
+ <div class="two"><label>折扣門檻 1（元）<input id="discount-threshold-1" type="number" min="0" step="1" placeholder="例如 500"></label><label>折扣比例 1（%）<input id="discount-percent-1" type="number" min="1" max="100" step="0.1" placeholder="例如 5"></label></div>
+ <div class="two"><label>折扣門檻 2（元）<input id="discount-threshold-2" type="number" min="0" step="1" placeholder="例如 1000"></label><label>折扣比例 2（%）<input id="discount-percent-2" type="number" min="1" max="100" step="0.1" placeholder="例如 8"></label></div>
+ <div class="two"><label>折扣門檻 3（元）<input id="discount-threshold-3" type="number" min="0" step="1" placeholder="例如 2000"></label><label>折扣比例 3（%）<input id="discount-percent-3" type="number" min="1" max="100" step="0.1" placeholder="例如 10"></label></div>
+ <p class="hint">例如：滿 500 打 95 折（折 5%）、滿 1,000 折 8%、滿 2,000 折 10%。留空或填 0 代表該級不啟用。</p>
  <label>選擇商標圖片<input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
  <div id="logo-preview" class="upload-preview" hidden></div>
  <div class="actions"><button class="primary" id="logo-download" type="button">下載 site-settings.json</button></div>

@@ -260,7 +260,7 @@ async function loadSiteSettingsAdmin(){
  document.body.dataset.theme=siteSettings.theme;
  $("theme-select").value=siteSettings.theme;
  const tiers=Array.isArray(siteSettings.discountTiers)?siteSettings.discountTiers:[];
- for(let i=1;i<=3;i++){const t=tiers[i-1]||{};$("discount-threshold-"+i).value=t.threshold||"";$("discount-amount-"+i).value=t.amount||"";}
+ for(let i=1;i<=3;i++){const t=tiers[i-1]||{};$("discount-threshold-"+i).value=t.threshold||"";$("discount-percent-"+i).value=t.amount||"";}
  if(siteSettings.logo){$("logo-preview").hidden=false;$("logo-preview").innerHTML=`<img alt="目前官網商標" src="${siteSettings.logo}">`;}
 }
 $("theme-select").addEventListener("change",e=>{
@@ -278,7 +278,7 @@ $("logo-file").addEventListener("change",async e=>{
 });
 $("logo-download").addEventListener("click",()=>{
  siteSettings.discountTiers=[];
- for(let i=1;i<=3;i++){const threshold=Math.max(0,Math.floor(Number($("discount-threshold-"+i).value)||0)),amount=Math.max(0,Math.floor(Number($("discount-amount-"+i).value)||0));if(threshold>0&&amount>0)siteSettings.discountTiers.push({threshold,amount});}
+ for(let i=1;i<=3;i++){const threshold=Math.max(0,Math.floor(Number($("discount-threshold-"+i).value)||0)),percent=Math.min(100,Math.max(0,Number($("discount-percent-"+i).value)||0));if(threshold>0&&percent>0)siteSettings.discountTiers.push({threshold,percent});}
  siteSettings.discountTiers.sort((a,b)=>a.threshold-b.threshold);
  const blob=new Blob([JSON.stringify(siteSettings,null,2)],{type:"application/json;charset=utf-8"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="site-settings.json";a.click();URL.revokeObjectURL(a.href);
