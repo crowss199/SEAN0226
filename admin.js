@@ -114,9 +114,19 @@ function downloadProducts(message="已下載 products.json，請上傳到 GitHub
  setTimeout(()=>URL.revokeObjectURL(url),1000);
  $("status").textContent=message;
 }
+const selectedProductIds=new Set();
+function updateBulkDeleteUI(){
+ const count=selectedProductIds.size;
+ $("selected-product-count").textContent=`已選取 ${count} 件`;
+ $("bulk-delete-products").disabled=count===0;
+ $("select-all-products").checked=products.length>0&&products.every(p=>selectedProductIds.has(String(p.id)));
+ $("select-all-products").indeterminate=count>0&&!$("select-all-products").checked;
+}
 function render(){
  $("count").textContent=`（${products.length} 件）`;
- $("product-list").innerHTML=products.length?products.map(p=>`<div class="product-row"><div><strong>${esc(p.name)}</strong><small>${esc(p.brand||"未分類廠牌")}｜${esc(p.functionCategory||"未分類功能")}　${esc(p.desc||"")}<br>${p.variants.map(v=>`${esc(v.name)}：NT$ ${Number(v.price??p.price??0).toLocaleString("zh-TW")}`).join("　／　")}</small></div><div class="row-actions"><button class="light" data-edit="${p.id}">修改</button><button class="delete" data-delete="${p.id}">刪除</button></div></div>`).join(""):'<p class="hint">目前沒有商品，請使用上方表單新增。</p>';
+ for(const id of [...selectedProductIds])if(!products.some(p=>String(p.id)===id))selectedProductIds.delete(id);
+ $("product-list").innerHTML=products.length?products.map(p=>`<div class="product-row"><label class="product-select"><input type="checkbox" data-select-product="${esc(p.id)}" ${selectedProductIds.has(String(p.id))?"checked":""} aria-label="勾選${esc(p.name)}"> </label><div class="product-info"><strong>${esc(p.name)}</strong><small>${esc(p.brand||"未分類廠牌")}｜${esc(p.functionCategory||"未分類功能")}　${esc(p.desc||"")}<br>${p.variants.map(v=>`${esc(v.name)}：NT$ ${Number(v.price??p.price??0).toLocaleString("zh-TW")}`).join("　／　")}</small></div><div class="row-actions"><button class="light" data-edit="${p.id}">修改</button><button class="delete" data-delete="${p.id}">刪除</button></div></div>`).join(""):'<p class="hint">目前沒有商品，請使用上方表單新增。</p>';
+ updateBulkDeleteUI();
 }
 function reset(){
  $("product-form").reset();selectedProductImage="";$("image-preview").hidden=true;$("image-preview").innerHTML="";
@@ -133,6 +143,21 @@ $("product-form").addEventListener("submit",e=>{
  if(!p.name){$("status").textContent="請填寫商品名稱。";return}
  let i=products.findIndex(x=>Number(x.id)===id);i>=0?products[i]=p:products.push(p);
  reset();render();saveProductDraft();$("status").textContent="商品已儲存。可繼續新增或修改其他商品，全部完成後再按「下載更新檔」一次下載 products.json。";
+});
+$("product-list").addEventListener("change",e=>{
+ const box=e.target.closest("[data-select-product]");if(!box)return;
+ const id=String(box.dataset.selectProduct);box.checked?selectedProductIds.add(id):selectedProductIds.delete(id);updateBulkDeleteUI();
+});
+$("select-all-products").addEventListener("change",e=>{
+ selectedProductIds.clear();if(e.target.checked)products.forEach(p=>selectedProductIds.add(String(p.id)));render();
+});
+$("bulk-delete-products").addEventListener("click",()=>{
+ const ids=new Set(selectedProductIds);if(!ids.size)return;
+ const targets=products.filter(p=>ids.has(String(p.id)));
+ if(!confirm(`確定批次刪除已勾選的 ${targets.length} 件商品？此操作會從目前商品資料中移除，請確認後再下載 products.json 並上傳 GitHub。`))return;
+ products=products.filter(p=>!ids.has(String(p.id)));selectedProductIds.clear();
+ if(ids.has(String($("edit-id").value)))reset();
+ render();saveProductDraft();$("status").textContent=`已批次刪除 ${targets.length} 件商品。請按「下載更新檔」下載 products.json，再上傳 GitHub 根目錄才會正式生效。`;
 });
 $("product-list").addEventListener("click",e=>{
  let eb=e.target.closest("[data-edit]"),db=e.target.closest("[data-delete]");

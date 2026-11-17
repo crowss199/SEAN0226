@@ -49,3 +49,5 @@
 .variant-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 120px 110px auto!important}
 .variant-row label:nth-child(3),.variant-row label:nth-child(4){border-left:1px solid #e3e6de;padding-left:9px}
 @media(max-width:700px){.variant-row{grid-template-columns:1fr 1fr!important}.variant-row label:nth-child(2),.variant-row label:nth-child(3),.variant-row label:nth-child(4){border-left:0;border-top:1px solid #e3e6de;padding:9px 0 0}.variant-row button{grid-column:auto!important}}
+
+.bulk-delete-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid #eeede7;font-size:12px;color:#73786d}.bulk-delete-bar label,.product-select{display:flex;align-items:center;gap:7px;margin:0}.bulk-delete-bar input,.product-select input{width:16px;height:16px;accent-color:#5f6c55}.bulk-delete-bar button:disabled{opacity:.45;cursor:not-allowed}.product-select{flex:none}.product-info{flex:1;min-width:0}.product-row{justify-content:flex-start}.product-row .row-actions{margin-left:auto}@media(max-width:600px){.bulk-delete-bar{gap:9px}.product-row{gap:8px}.product-row .row-actions{margin-left:0}}
