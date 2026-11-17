@@ -1,1 +1,419 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "三菱鉛筆  2.0mm筆芯專用削鉛筆機",
+    "brand": "三菱鉛筆",
+    "functionCategory": "削鉛筆機",
+    "desc": "",
+    "image": "https://example.com/image.jpg",
+    "url": "",
+    "price": 180,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "單個",
+        "barcode": "4902778013328",
+        "price": 180,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "三菱 自動鉛筆 阿發細桿 0.5MM",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 190,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.5白色",
+        "barcode": "4902778247518",
+        "price": 190,
+        "stock": 0
+      },
+      {
+        "name": "0.5灰銀色",
+        "barcode": "4902778260586",
+        "price": 190,
+        "stock": 0
+      },
+      {
+        "name": "0.5紅色",
+        "barcode": "4902778260579",
+        "price": 190,
+        "stock": 0
+      },
+      {
+        "name": "0.5海軍藍",
+        "barcode": "4902778247525",
+        "price": 190,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "三菱 自動鉛筆 阿發搖搖 粗桿 0.5MM 白色_M5619GG1P.1",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 150,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.6白色",
+        "barcode": "4902778247464",
+        "price": 150,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "三菱 自動鉛筆 阿發搖搖 粗桿 0.5MM 灰銀色_M5619GG1P.43",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 150,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.6灰銀色",
+        "barcode": "4902778260555",
+        "price": 150,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "三菱 自動鉛筆 阿發搖搖 粗桿 0.5MM 紅色_M5619GG1P.15",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 150,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.6紅色",
+        "barcode": "4902778260548",
+        "price": 150,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "三菱 自動鉛筆 阿發搖搖 粗桿 0.5MM 海軍色_M5619GG1P.9",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 150,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.6海軍藍",
+        "barcode": "4902778247471",
+        "price": 150,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "name": "三菱 自動鉛筆 製圖0.3mm_M3-552(黃)",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 130,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.3黃",
+        "barcode": "4902778364260",
+        "price": 130,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "name": "三菱 自動鉛筆 製圖0.4mm_M4-552(橘)",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 130,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.4橘",
+        "barcode": "4902778364277",
+        "price": 130,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "name": "三菱 自動鉛筆 製圖0.5mm_M5-552(紅)",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 130,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.5紅",
+        "barcode": "4902778364284",
+        "price": 130,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "name": "三菱 自動鉛筆 製圖0.7mm_M7-552(藍)",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 130,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.7藍",
+        "barcode": "4902778364291",
+        "price": 130,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "name": "三菱 自動鉛筆 製圖0.9mm_M9-552(綠)",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 130,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.9綠",
+        "barcode": "4902778364307",
+        "price": 130,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "name": "三菱 自動鉛筆 CLiFTER0.5mm_M5-118(綠)",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 30,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.5綠",
+        "barcode": "4902778011041",
+        "price": 30,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "name": "三菱 自動鉛筆 CLiFTER0.5mm_M5-118(橘)",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 30,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.5橘",
+        "barcode": "4902778011034",
+        "price": 30,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "name": "三菱 自動鉛筆 FiELD建築用 2.0mm 2H(灰)_M20-700",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 175,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "2.0灰",
+        "barcode": "4902778143278",
+        "price": 175,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "name": "三菱 自動鉛筆 FiELD建築用 2.0mm HB(黑)_M20-700",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 175,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "2.0黑",
+        "barcode": "4902778143285",
+        "price": 175,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "name": "三菱 自動鉛筆 FiELD建築用 2.0mm(紅)_M20-700",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 175,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "2.0紅",
+        "barcode": "4902778143308",
+        "price": 175,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "name": "三菱 自動鉛筆 KURU TOGA KS系列 0.5mm(冰藍)_ KS1P-32",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 139,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.5冰藍",
+        "barcode": "4902778302408",
+        "price": 139,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "name": "三菱 自動鉛筆 KURU TOGA KS系列 0.5mm(海軍藍)_ KS1P-9",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 139,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.5海軍藍",
+        "barcode": "4902778302385",
+        "price": 139,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "name": "三菱 自動鉛筆 KURU TOGA KS系列 0.5mm(淺灰)_ KS1P-37",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 139,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.5淺灰",
+        "barcode": "4902778302392",
+        "price": 139,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "name": "三菱 自動鉛筆 KURU TOGA KS系列 0.5mm(象牙)_ M5KS1P.46",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 139,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.5象牙",
+        "barcode": "4902778319321",
+        "price": 139,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "name": "三菱 自動鉛筆 KURU TOGA KS系列 0.5mm(藍)_ KS1P-33",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 0,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.5藍",
+        "barcode": "",
+        "price": 0,
+        "stock": 0
+      }
+    ]
+  }
+]
