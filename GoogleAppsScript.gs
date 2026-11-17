@@ -159,9 +159,20 @@ function appendOrderItemDetails_(order, orderDate) {
   const detail = ensureOrderDetailSheet_();
   const headers = readHeaders_(detail);
   const col = name => headers.indexOf(normalizeHeader_(name));
-  const rows = order.items.map(item => {
+  // 將整筆訂單折扣按各商品原始金額比例分攤，確保明細合計等於折扣後商品金額。
+  const grossTotal = order.items.reduce((sum, item) => sum + Math.max(0, Number(item.amount) || 0), 0);
+  const discount = Math.min(grossTotal, Math.max(0, Number(order.discountAmount) || 0));
+  const netTotal = Math.max(0, grossTotal - discount);
+  let allocated = 0;
+  const rows = order.items.map((item, itemIndex) => {
     const values = new Array(detail.getLastColumn()).fill("");
     const barcode = String(item.barcode || item.internationalBarcode || item.salesBarcode || "").trim();
+    const grossAmount = Math.max(0, Number(item.amount) || 0);
+    const netAmount = itemIndex === order.items.length - 1
+      ? netTotal - allocated
+      : (grossTotal > 0 ? Math.floor(netTotal * grossAmount / grossTotal) : 0);
+    allocated += netAmount;
+    const quantity = Math.max(0, Number(item.quantity) || 0);
     const data = {
       "訂單編號": String(order.orderId || ""),
       "下單時間": orderDate,
@@ -169,9 +180,9 @@ function appendOrderItemDetails_(order, orderDate) {
       "商品名稱": String(item.name || ""),
       "商品規格": String(item.variant || "一般規格"),
       "銷售條碼": barcode,
-      "銷售數量": Number(item.quantity || 0),
-      "銷售單價": Number(item.unitPrice || 0),
-      "銷售金額": Number(item.amount || 0)
+      "銷售數量": quantity,
+      "銷售單價": quantity > 0 ? netAmount / quantity : 0,
+      "銷售金額": netAmount
     };
     Object.keys(data).forEach(name => {
       const index = col(name);
@@ -348,7 +359,7 @@ function doPost(e) {
     sh.getRange(newRow, 1, 1, HEADERS.length).setValues([[
       String(d.orderId), orderDate, String(d.recipient),
       String(d.phone), String(d.email), "待寄送", String(d.storeId), String(d.temperature), goods,
-      Number(d.productAmount), Number(d.shippingFee), String(d.note || ""),
+      Math.max(0, Number(d.productAmount) - Number(d.discountAmount || 0)), Number(d.shippingFee), String(d.note || ""),
       JSON.stringify({social:String(d.social || ""),storeName:String(d.storeName || ""),storeAddress:String(d.storeAddress || ""),discountAmount:Math.max(0,Number(d.discountAmount)||0),discountThreshold:Math.max(0,Number(d.discountThreshold)||0),discountPercent:Math.max(0,Number(d.discountPercent)||0)}), "新訂單"
     ]]);
     const discountCol=getHeaderColumn_(sh,"折扣金額");
