@@ -6,20 +6,52 @@
     "price": 75,
     "tag": "人氣選物",
     "symbol": "UNI",
-    "image": "",
-    "url": "",
-    "category": "writing"
+    "image": "https://images.plurk.com/AU80c5SX4kjBl0d8aAaJC.jpg",
+    "url": "https://docs.google.com/spreadsheets/d/1NBtKCn8Z4HNASak8g4EFGLNocnAYtR_mOIy-S_nU2e8/edit?gid=0#gid=0&range=B2:C2",
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.3MM",
+        "barcode": "4902778013328",
+        "price": 75,
+        "stock": 5
+      },
+      {
+        "name": "0.5MM",
+        "barcode": "4902778247518",
+        "price": 75,
+        "stock": 5
+      }
+    ],
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆筆芯"
   },
   {
     "id": 2,
     "name": "KOKUYO Campus Junior Pencil 自動鉛筆",
     "desc": "六角軸｜0.9mm／1.3mm",
-    "price": 45,
+    "price": 100,
     "tag": "KOKUYO",
     "symbol": "K",
-    "image": "",
-    "url": "",
-    "category": "writing"
+    "image": "https://images.plurk.com/19zfQgYnBAIzCmNJKDOkzM.png",
+    "url": "https://docs.google.com/spreadsheets/d/1NBtKCn8Z4HNASak8g4EFGLNocnAYtR_mOIy-S_nU2e8/edit?gid=1474194654#gid=1474194654&range=A1:C1",
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.9mm",
+        "barcode": "4902778260586",
+        "price": 100,
+        "stock": 7
+      },
+      {
+        "name": "1.3mm",
+        "barcode": "4902778260579",
+        "price": 105,
+        "stock": 4
+      }
+    ],
+    "brand": "KOKUYO",
+    "functionCategory": "自動鉛筆"
   },
   {
     "id": 3,
@@ -30,7 +62,15 @@
     "symbol": "JET",
     "image": "",
     "url": "",
-    "category": "writing"
+    "category": "writing",
+    "variants": [
+      {
+        "name": "一般規格",
+        "stock": null,
+        "price": 50,
+        "barcode": ""
+      }
+    ]
   },
   {
     "id": 4,
@@ -41,7 +81,15 @@
     "symbol": "2.0",
     "image": "",
     "url": "",
-    "category": "accessory"
+    "category": "accessory",
+    "variants": [
+      {
+        "name": "一般規格",
+        "stock": null,
+        "price": 157,
+        "barcode": ""
+      }
+    ]
   },
   {
     "id": 5,
@@ -52,7 +100,15 @@
     "symbol": "PG",
     "image": "",
     "url": "",
-    "category": "writing"
+    "category": "writing",
+    "variants": [
+      {
+        "name": "一般規格",
+        "stock": null,
+        "price": 99,
+        "barcode": ""
+      }
+    ]
   },
   {
     "id": 6,
@@ -63,6 +119,14 @@
     "symbol": "4+1",
     "image": "",
     "url": "",
-    "category": "writing"
+    "category": "writing",
+    "variants": [
+      {
+        "name": "一般規格",
+        "stock": null,
+        "price": 243,
+        "barcode": ""
+      }
+    ]
   }
 ]
