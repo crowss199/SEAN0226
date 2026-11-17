@@ -42,6 +42,19 @@
 <div id="image-preview" class="upload-preview" hidden></div></div>
 <label>庫存查詢（選填）<input id="url" type="url" placeholder="可貼上商品庫存查詢網址；官網商品卡片會顯示可點選連結"></label>
 <div class="actions"><button class="primary" type="submit" id="submit-btn">＋ 加入商品清單</button><button type="button" id="cancel-edit" class="light" hidden>取消編輯</button></div><p class="hint">＊必填。每個規格都要填寫規格名稱及價格；國際條碼可留空。庫存可在各規格欄位手動修改，也可使用國際條碼庫存同步。按下加入商品或儲存修改後只會暫存變更，不會自動下載。</p><p class="status" id="status" aria-live="polite"></p></form></section>
+<section class="panel" id="product-batch-panel">
+ <h2>商品批次匯入／更新</h2>
+ <p class="hint">支援 Excel（.xlsx／.xls）及 CSV。以「國際條碼」比對官網規格：條碼相同就更新該規格及商品欄位；找不到條碼就新增商品。相同商品名稱的多列資料會合併成同一商品的多個規格。匯入前會先預覽，確認後才套用。</p>
+ <div class="inventory-actions"><label class="file-pick">選擇商品資料檔案<input type="file" id="product-batch-file" accept=".xlsx,.xls,.csv" /></label><button class="light" type="button" id="product-batch-template">下載商品匯入範例 CSV</button></div>
+ <div id="product-batch-area" hidden>
+  <div class="mapping-grid" id="product-batch-mapping"></div>
+  <p class="hint">必須指定「商品名稱、規格名稱、價格」；國際條碼可留空，但留空的資料會視為新商品規格，不會更新舊規格。庫存可留空以保留原庫存（新商品預設 0）。</p>
+  <div id="product-batch-summary" class="inventory-summary"></div>
+  <div class="table-wrap"><table id="product-batch-preview"><thead></thead><tbody></tbody></table></div>
+  <div class="actions"><button class="primary" id="product-batch-apply" type="button" disabled>確認批次新增／更新</button><button class="light" id="product-batch-cancel" type="button">取消匯入</button></div>
+  <p id="product-batch-status" class="status" aria-live="polite"></p>
+ </div>
+</section>
 <section class="panel" id="inventory-sync-panel">
  <h2>商品庫存同步（依國際條碼）</h2>
  <p class="hint">從商品庫存試算表下載 Excel（.xlsx／.xls）或 CSV，匯入後系統會用「國際條碼」比對官網各商品規格，只更新對應規格的庫存，不會更動商品名稱、各規格價格、圖片、描述、規格、國際條碼或其他商品資料。建議試算表至少有「國際條碼」及「庫存」兩欄，第一個工作表需包含欄位標題。</p>

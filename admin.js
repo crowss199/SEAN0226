@@ -355,3 +355,65 @@ async function loadFaqAdmin(){try{const r=await fetch("./faq.json",{cache:"no-st
 function renderFaqAdmin(){const box=$("faq-admin-list");if(!box)return;box.innerHTML=faqItems.map((x,i)=>`<div class="faq-admin-row" data-faq-index="${i}"><label>問題 ${i+1}<input class="faq-question" maxlength="160" value="${esc(x.q)}" placeholder="輸入常見問題"></label><label>回答<textarea class="faq-answer" rows="3" maxlength="1500" placeholder="輸入回答">${esc(x.a)}</textarea></label><div class="actions"><button class="light faq-save" type="button">儲存此題</button><button class="delete faq-delete" type="button">刪除此題</button></div></div>`).join("")||'<p class="hint">目前沒有常見問題，請按「新增常見問題」。</p>';box.querySelectorAll(".faq-save").forEach(b=>b.addEventListener("click",()=>{const row=b.closest(".faq-admin-row"),i=Number(row.dataset.faqIndex);faqItems[i]={q:row.querySelector(".faq-question").value.trim(),a:row.querySelector(".faq-answer").value.trim()};$("faq-status").textContent="此題已暫存，完成全部編輯後請下載 faq.json。";}));box.querySelectorAll(".faq-delete").forEach(b=>b.addEventListener("click",()=>{const row=b.closest(".faq-admin-row"),i=Number(row.dataset.faqIndex);if(confirm("確定刪除此常見問題？")){faqItems.splice(i,1);renderFaqAdmin();$("faq-status").textContent="已刪除該題，請下載 faq.json 才會更新官網。";}}));}
 $("faq-add")?.addEventListener("click",()=>{faqItems.push({q:"",a:""});renderFaqAdmin();const rows=$("faq-admin-list").querySelectorAll(".faq-admin-row");rows[rows.length-1]?.scrollIntoView({behavior:"smooth",block:"center"});rows[rows.length-1]?.querySelector(".faq-question")?.focus();$("faq-status").textContent="已新增空白題目，請填寫問題與回答並按「儲存此題」。";});
 $("faq-download")?.addEventListener("click",()=>{const rows=[...$("faq-admin-list").querySelectorAll(".faq-admin-row")];faqItems=rows.map(row=>({q:row.querySelector(".faq-question").value.trim(),a:row.querySelector(".faq-answer").value.trim()}));if(faqItems.some(x=>!x.q||!x.a)){$("faq-status").textContent="每一題都需要填寫問題與回答，請確認後再下載。";return;}const blob=new Blob([JSON.stringify(faqItems,null,2)],{type:"application/json;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="faq.json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);$("faq-status").textContent="已下載 faq.json。請上傳 GitHub Repository 根目錄覆蓋舊檔，常見問題頁面才會同步更新。";});
+
+
+// V28：商品批次新增／更新；以國際條碼匹配規格，保留未匹配的既有規格與隱藏欄位。
+(()=>{
+ const aliases={
+  name:["商品名稱","商品品名","品名","名稱","商品","product name","name"],
+  brand:["品牌","廠牌","商品品牌","brand"],
+  functionCategory:["功能分類","商品分類","分類","類別","category","function category"],
+  desc:["商品介紹","商品描述","描述","說明","簡介","description"],
+  image:["商品圖片網址","圖片網址","圖片連結","圖片","image","image url"],
+  url:["庫存查詢網址","商品頁面網址","查詢網址","商品網址","url"],
+  variant:["規格名稱","商品規格","規格","款式","variant","specification"],
+  barcode:["國際條碼","商品國際條碼","商品條碼","條碼","EAN","EAN13","EAN-13","UPC","Barcode","GTIN"],
+  price:["售價","價格","規格價格","單價","price"],
+  stock:["庫存","庫存量","庫存數量","現有庫存","stock","qty"]
+ };
+ const labels={name:"商品名稱",brand:"品牌",functionCategory:"功能分類",desc:"商品介紹",image:"商品圖片網址",url:"庫存查詢網址",variant:"規格名稱",barcode:"國際條碼",price:"價格",stock:"庫存"};
+ let rows=[],headers=[],mapping={};
+ const norm=s=>String(s??"").trim().toLowerCase().replace(/[\s_\-（）()]/g,"");
+ const area=$("product-batch-area"),file=$("product-batch-file");
+ $("product-batch-template").addEventListener("click",()=>{const csv="商品名稱,品牌,功能分類,商品介紹,商品圖片網址,庫存查詢網址,規格名稱,國際條碼,價格,庫存\r\n三菱 Jetstream 原子筆,三菱,書寫,0.5mm 黑色,https://example.com/image.jpg,,0.5mm 黑色,4710000000000,45,20\r\n三菱 Jetstream 原子筆,三菱,書寫,0.5mm 藍色,,,0.5mm 藍色,4710000000001,45,15\r\n新商品範例,範例品牌,文具,商品介紹,,,一般規格,,30,10\r\n";const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="翔安富文具_商品批次匯入範例.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200)});
+ function findCol(key){return headers.find(h=>aliases[key].some(a=>norm(h)===norm(a)||norm(h).includes(norm(a))))||""}
+ function value(row,key){return String(row[mapping[key]]??"").trim()}
+ function barcode(s){return String(s??"").replace(/[\s-]/g,"").trim()}
+ function drawMapping(){
+  $("product-batch-mapping").innerHTML=Object.keys(labels).map(k=>`<label>${labels[k]}${["name","variant","price"].includes(k)?"＊":""}<select data-batch-map="${k}"><option value="">（不匯入）</option>${headers.map(h=>`<option value="${esc(h)}" ${mapping[k]===h?"selected":""}>${esc(h)}</option>`).join("")}</select></label>`).join("");
+  $("product-batch-mapping").querySelectorAll("select").forEach(el=>el.addEventListener("change",()=>{mapping[el.dataset.batchMap]=el.value;preview()}));
+ }
+ function preview(){
+  const required=["name","variant","price"],missing=required.filter(k=>!mapping[k]);
+  const parsed=rows.map((r,i)=>({i,name:value(r,"name"),brand:value(r,"brand"),functionCategory:value(r,"functionCategory"),desc:value(r,"desc"),image:value(r,"image"),url:value(r,"url"),variant:value(r,"variant")||"一般規格",barcode:barcode(value(r,"barcode")),price:value(r,"price"),stock:value(r,"stock")}));
+  const valid=parsed.filter(x=>x.name&&x.variant&&x.price!==""&&Number.isFinite(Number(x.price))&&Number(x.price)>=0&&Number.isInteger(Number(x.price)));
+  const existing=new Map();for(const p of products)for(const v of p.variants||[]){const b=barcode(v.barcode);if(b){if(!existing.has(b))existing.set(b,[]);existing.get(b).push({p,v})}}
+  let update=0,add=0,invalid=parsed.length-valid.length,dupe=0;
+  const seen=new Set();for(const x of valid){if(x.barcode&&seen.has(x.barcode)){dupe++;continue}if(x.barcode)seen.add(x.barcode);const hits=existing.get(x.barcode)||[];if(x.barcode&&hits.length===1)update++;else add++;}
+  $("product-batch-summary").innerHTML=`讀取 <strong>${parsed.length}</strong> 列；可更新規格 <strong>${update}</strong> 個；預計新增規格／商品 <strong>${add}</strong> 個；格式錯誤 <strong>${invalid}</strong> 列；檔案內重複條碼 <strong>${dupe}</strong> 列（重複條碼會略過）。${missing.length?`<br>請指定必要欄位：${missing.map(k=>labels[k]).join("、")}`:""}`;
+  const previewRows=parsed.slice(0,12);$("product-batch-preview").querySelector("thead").innerHTML="<tr><th>商品名稱</th><th>規格</th><th>國際條碼</th><th>價格</th><th>庫存</th><th>預計處理</th></tr>";
+  $("product-batch-preview").querySelector("tbody").innerHTML=previewRows.map(x=>{const hits=existing.get(x.barcode)||[];const action=!x.name||!x.variant||x.price===""||!Number.isInteger(Number(x.price))?"資料不完整／略過":x.barcode&&hits.length===1?"依條碼更新":x.barcode&&hits.length>1?"官網條碼重複／略過":"新增";return `<tr><td>${esc(x.name)}</td><td>${esc(x.variant)}</td><td>${esc(x.barcode)}</td><td>${esc(x.price)}</td><td>${esc(x.stock)}</td><td>${action}</td></tr>`}).join("");
+  $("product-batch-apply").disabled=missing.length>0||valid.length===0;
+ }
+ file.addEventListener("change",async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{if(!window.XLSX)throw Error("Excel／CSV 讀取元件載入失敗，請重新整理頁面後再試。");const wb=XLSX.read(await f.arrayBuffer(),{type:"array",raw:false});const sh=wb.Sheets[wb.SheetNames[0]];const matrix=XLSX.utils.sheet_to_json(sh,{header:1,defval:"",raw:false});if(!matrix.length)throw Error("檔案沒有資料。");headers=matrix[0].map(v=>String(v??"").trim());rows=matrix.slice(1).filter(r=>r.some(v=>String(v??"").trim())).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??""]).filter(([h])=>h)));
+   mapping={};Object.keys(labels).forEach(k=>mapping[k]=findCol(k));drawMapping();area.hidden=false;preview();$("product-batch-status").textContent=`已讀取 ${rows.length} 列，請確認欄位對應及預覽。`;
+  }catch(err){$("product-batch-status").textContent=err.message||"檔案讀取失敗。";area.hidden=false}file.value="";
+ });
+ $("product-batch-apply").addEventListener("click",()=>{
+  const parsed=rows.map(r=>({name:value(r,"name"),brand:value(r,"brand"),functionCategory:value(r,"functionCategory"),desc:value(r,"desc"),image:value(r,"image"),url:value(r,"url"),variant:value(r,"variant")||"一般規格",barcode:barcode(value(r,"barcode")),price:Number(value(r,"price")),stock:value(r,"stock")===""?null:Number(value(r,"stock"))}));
+  const seen=new Set(),valid=parsed.filter(x=>x.name&&x.variant&&Number.isInteger(x.price)&&x.price>=0&&(x.stock===null||(Number.isInteger(x.stock)&&x.stock>=0))).filter(x=>{if(x.barcode&&seen.has(x.barcode))return false;if(x.barcode)seen.add(x.barcode);return true});
+  if(!valid.length)return;
+  const barcodeIndex=new Map();for(const p of products)for(const v of p.variants||[]){const b=barcode(v.barcode);if(b){if(!barcodeIndex.has(b))barcodeIndex.set(b,[]);barcodeIndex.get(b).push({p,v})}}
+  const updates=[],newRows=[];let skipped=parsed.length-valid.length,ambiguous=0;
+  for(const x of valid){const hits=x.barcode?(barcodeIndex.get(x.barcode)||[]):[];if(x.barcode&&hits.length>1){ambiguous++;continue}if(x.barcode&&hits.length===1){const {p,v}=hits[0];const fields={};for(const k of ["brand","functionCategory","desc","image","url"])if(x[k])fields[k]=x[k];Object.assign(p,fields);v.name=x.variant;v.price=x.price;if(x.stock!==null)v.stock=x.stock;updates.push(x)}else newRows.push(x)}
+  // 新增列依商品名稱合併；不覆蓋現有商品，避免無條碼資料誤改舊商品。
+  const grouped=new Map();for(const x of newRows){if(!grouped.has(x.name))grouped.set(x.name,[]);grouped.get(x.name).push(x)}
+  let addedProducts=0,addedVariants=0;
+  for(const [name,list] of grouped){const first=list[0],id=Math.max(0,...products.map(p=>Number(p.id)||0))+1;const variants=list.map(x=>({name:x.variant,barcode:x.barcode,price:x.price,stock:x.stock===null?0:x.stock}));products.push({id,name,brand:first.brand,functionCategory:first.functionCategory,desc:first.desc,image:first.image,url:first.url,price:variants[0].price,category:"writing",variants});addedProducts++;addedVariants+=variants.length;}
+  render();saveProductDraft();$("product-batch-status").textContent=`批次匯入完成：更新 ${updates.length} 個既有規格；新增 ${addedProducts} 件商品（${addedVariants} 個規格）；略過 ${skipped+ambiguous} 列（包含資料錯誤、重複條碼或官網條碼重複）。請檢查商品清單，再按「下載更新檔」下載 products.json 並上傳 GitHub。`;
+  area.hidden=true;rows=[];headers=[];mapping={};
+ });
+ $("product-batch-cancel").addEventListener("click",()=>{area.hidden=true;rows=[];headers=[];mapping={};file.value="";$("product-batch-status").textContent="已取消匯入，商品資料未變更。"});
+})();
