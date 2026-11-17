@@ -124,3 +124,13 @@ body{background:#fff;color:var(--ink)}
 .variant-select{cursor:pointer;pointer-events:auto;position:relative;z-index:1}
 .variant-select option{color:#34382f;background:#fff}
 .add-button:disabled{opacity:.55;cursor:not-allowed;color:#9a9a92}
+
+/* V30：商品圖片點擊放大檢視 */
+.product-image img{cursor:zoom-in}
+.image-zoom-modal{display:none;position:fixed;inset:0;z-index:1000;background:rgba(18,20,17,.88);align-items:center;justify-content:center;padding:54px 22px 48px;}
+.image-zoom-modal.is-open{display:flex}
+.image-zoom-full{display:block;max-width:min(92vw,1100px);max-height:82vh;width:auto;height:auto;object-fit:contain;background:#fff;box-shadow:0 12px 45px #0005}
+.image-zoom-close{position:absolute;top:16px;right:22px;width:44px;height:44px;border:1px solid #ffffff80;background:#20231f;color:#fff;font-size:30px;line-height:1;cursor:pointer}
+.image-zoom-hint{position:absolute;bottom:12px;left:0;right:0;margin:0;text-align:center;color:#fff;font-size:11px;letter-spacing:.5px}
+body.image-zoom-open{overflow:hidden}
+@media(max-width:700px){.image-zoom-modal{padding:52px 10px 45px}.image-zoom-full{max-width:96vw;max-height:80vh}.image-zoom-close{top:10px;right:12px}}

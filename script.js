@@ -96,3 +96,23 @@ loadSiteSettings();
 // 手機號碼查詢訂單（Apps Script JSONP）
 function lookupOrders(phone){const endpoint=window.CHECKOUT_CONFIG?.WEB_APP_URL||"";if(!endpoint){$("lookup-status").textContent="尚未設定訂單查詢網址。";return}const callback="orderLookup"+Date.now();window[callback]=data=>{delete window[callback];script.remove();if(!data.ok){$("lookup-status").textContent=data.error||"查詢失敗";return}const rows=data.orders||[];$("lookup-status").textContent=rows.length?`查到 ${rows.length} 筆訂單`:"查無此手機號碼的訂單。";$("lookup-results").innerHTML=rows.map(o=>`<article class="lookup-order"><strong>${esc(o.orderId)}</strong><span>${esc(o.createdAt)}</span><p>${esc(o.goods)}</p><p>門市店號：${esc(o.storeId)}｜商品金額：NT$ ${esc(o.productAmount)}｜運費：NT$ ${esc(o.shippingFee)}</p><b>狀態：${esc(o.status)}</b></article>`).join("")};const script=document.createElement("script");script.src=endpoint+"?phone="+encodeURIComponent(phone)+"&callback="+callback;script.onerror=()=>{$("lookup-status").textContent="查詢服務暫時無法連線，請稍後再試。";delete window[callback]};document.body.appendChild(script)}
 $("order-lookup-form").addEventListener("submit",e=>{e.preventDefault();const phone=$("lookup-phone").value.replace(/\D/g,"");$("lookup-results").innerHTML="";if(!/^\d{10}$/.test(phone)){$("lookup-status").textContent="請輸入正確的 10 碼手機號碼。";return}$("lookup-status").textContent="查詢中…";lookupOrders(phone)});
+
+// V30：點擊商品圖片可放大檢視
+(function setupProductImageZoom(){
+ const grid=document.getElementById('product-grid');
+ if(!grid)return;
+ let modal=null;
+ function closeZoom(){if(!modal)return;modal.classList.remove('is-open');document.body.classList.remove('image-zoom-open');}
+ function openZoom(img){
+  if(!modal){
+   modal=document.createElement('div');modal.className='image-zoom-modal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','商品圖片放大檢視');
+   modal.innerHTML='<button type="button" class="image-zoom-close" aria-label="關閉圖片">×</button><img class="image-zoom-full" alt=""><p class="image-zoom-hint">點擊圖片外圍或按 Esc 關閉</p>';
+   document.body.appendChild(modal);
+   modal.addEventListener('click',e=>{if(e.target===modal||e.target.closest('.image-zoom-close'))closeZoom();});
+  }
+  const large=modal.querySelector('.image-zoom-full');large.src=img.currentSrc||img.src;large.alt=img.alt||'商品圖片';
+  modal.classList.add('is-open');document.body.classList.add('image-zoom-open');modal.querySelector('.image-zoom-close').focus();
+ }
+ grid.addEventListener('click',e=>{const img=e.target.closest('.product-image img');if(img){e.preventDefault();openZoom(img);}});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeZoom();});
+})();
