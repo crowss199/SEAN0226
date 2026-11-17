@@ -281,8 +281,13 @@ $("logo-download").addEventListener("click",()=>{
  for(let i=1;i<=3;i++){const threshold=Math.max(0,Math.floor(Number($("discount-threshold-"+i).value)||0)),percent=Math.min(100,Math.max(0,Number($("discount-percent-"+i).value)||0));if(threshold>0&&percent>0)siteSettings.discountTiers.push({threshold,percent});}
  siteSettings.discountTiers.sort((a,b)=>a.threshold-b.threshold);
  const blob=new Blob([JSON.stringify(siteSettings,null,2)],{type:"application/json;charset=utf-8"});
- const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="site-settings.json";a.click();URL.revokeObjectURL(a.href);
- $("logo-status").textContent="已下載 site-settings.json（包含主題及商標設定），請上傳至 GitHub Repository 根目錄。";
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");
+ a.href=url;a.download="site-settings.json";a.style.display="none";
+ document.body.appendChild(a);
+ a.click();
+ setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
+ $("logo-status").textContent="已送出 site-settings.json 下載。若瀏覽器詢問，請選擇儲存；若沒有出現下載，請允許此網站下載檔案或檢查瀏覽器下載列。下載後上傳至 GitHub Repository 根目錄。";
 });
 
 if(sessionStorage.getItem(AUTH_KEY)==="yes")showAdmin();
