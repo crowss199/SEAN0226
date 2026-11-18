@@ -1,6 +1,25 @@
 [
   {
     "id": 1,
+    "name": "三菱 2.0mm筆芯專用削鉛筆機_DPS6001P",
+    "brand": "三菱鉛筆",
+    "functionCategory": "削鉛筆機",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 180,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "單個",
+        "barcode": "4902778013328",
+        "price": 180,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 2,
     "name": "三菱 自動鉛筆 阿發細桿 0.5MM M5809GG",
     "brand": "三菱鉛筆",
     "functionCategory": "自動鉛筆",
@@ -37,7 +56,7 @@
     ]
   },
   {
-    "id": 2,
+    "id": 3,
     "name": "三菱 自動鉛筆 阿發搖搖 粗桿 0.5MM M5619GG",
     "brand": "三菱鉛筆",
     "functionCategory": "自動鉛筆",
@@ -74,7 +93,7 @@
     ]
   },
   {
-    "id": 3,
+    "id": 4,
     "name": "三菱 自動鉛筆 製圖552系列",
     "brand": "三菱鉛筆",
     "functionCategory": "自動鉛筆",
@@ -85,83 +104,31 @@
     "category": "writing",
     "variants": [
       {
-        "name": "製圖0.3mm",
+        "name": "0.3mm",
         "barcode": "4902778364260",
         "price": 130,
         "stock": 0
-      }
-    ]
-  },
-  {
-    "id": 4,
-    "name": "三菱 自動鉛筆 製圖553系列",
-    "brand": "三菱鉛筆",
-    "functionCategory": "自動鉛筆",
-    "desc": "",
-    "image": "",
-    "url": "",
-    "price": 130,
-    "category": "writing",
-    "variants": [
+      },
       {
-        "name": "製圖0.4mm",
+        "name": "0.4mm",
         "barcode": "4902778364277",
         "price": 130,
         "stock": 0
-      }
-    ]
-  },
-  {
-    "id": 5,
-    "name": "三菱 自動鉛筆 製圖554系列",
-    "brand": "三菱鉛筆",
-    "functionCategory": "自動鉛筆",
-    "desc": "",
-    "image": "",
-    "url": "",
-    "price": 130,
-    "category": "writing",
-    "variants": [
+      },
       {
-        "name": "製圖0.5mm",
+        "name": "0.5mm",
         "barcode": "4902778364284",
         "price": 130,
         "stock": 0
-      }
-    ]
-  },
-  {
-    "id": 6,
-    "name": "三菱 自動鉛筆 製圖555系列",
-    "brand": "三菱鉛筆",
-    "functionCategory": "自動鉛筆",
-    "desc": "",
-    "image": "",
-    "url": "",
-    "price": 130,
-    "category": "writing",
-    "variants": [
+      },
       {
-        "name": "製圖0.7mm",
+        "name": "0.7mm",
         "barcode": "4902778364291",
         "price": 130,
         "stock": 0
-      }
-    ]
-  },
-  {
-    "id": 7,
-    "name": "三菱 自動鉛筆 製圖556系列",
-    "brand": "三菱鉛筆",
-    "functionCategory": "自動鉛筆",
-    "desc": "",
-    "image": "",
-    "url": "",
-    "price": 130,
-    "category": "writing",
-    "variants": [
+      },
       {
-        "name": "製圖0.9mm",
+        "name": "0.9mm",
         "barcode": "4902778364307",
         "price": 130,
         "stock": 0
