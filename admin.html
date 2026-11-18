@@ -44,8 +44,8 @@
 <div class="actions"><button class="primary" type="submit" id="submit-btn">＋ 加入商品清單</button><button type="button" id="cancel-edit" class="light" hidden>取消編輯</button></div><p class="hint">＊必填。每個規格都要填寫規格名稱及價格；國際條碼可留空。庫存可在各規格欄位手動修改，也可使用國際條碼庫存同步。按下加入商品或儲存修改後只會暫存變更，不會自動下載。</p><p class="status" id="status" aria-live="polite"></p></form></section>
 <section class="panel" id="product-batch-panel">
  <h2>商品批次匯入／更新</h2>
- <p class="hint">支援 Excel（.xlsx／.xls）及 CSV。必須提供唯一「國際條碼」：條碼相同就更新商品名稱、品牌、分類、介紹、圖片、查詢網址、規格名稱、價格及庫存；找不到條碼就新增商品／規格。相同商品名稱的多列資料會合併成同一商品。匯入前會先預覽，確認後才套用。</p>
- <div class="inventory-actions"><label class="file-pick">選擇商品資料檔案<input type="file" id="product-batch-file" accept=".xlsx,.xls,.csv" /></label><button class="light" type="button" id="product-batch-template">下載商品匯入範例 CSV</button></div>
+ <p class="hint">支援 Excel（.xlsx／.xls）及 CSV。建議先下載 Excel 範例（.xlsx）：國際條碼欄已設為文字格式，避免變成科學記號；各欄預設適當寬度，可在 Excel 直接拖曳欄界線調整。請用 Excel「另存新檔」保存後再上傳。必須提供唯一「國際條碼」：條碼相同就更新商品欄位；找不到條碼就新增商品／規格。匯入前會先預覽，確認後才套用。</p>
+ <div class="inventory-actions"><label class="file-pick">選擇商品資料檔案<input type="file" id="product-batch-file" accept=".xlsx,.xls,.csv" /></label><button class="light" type="button" id="product-batch-template">下載商品匯入 Excel 範例（.xlsx）</button></div>
  <div id="product-batch-area" hidden>
   <div class="mapping-grid" id="product-batch-mapping"></div>
   <p class="hint">必須指定「商品名稱、規格名稱、國際條碼、價格」。國際條碼是唯一比對依據，缺少條碼或重複條碼的資料會略過。條碼相同會更新該商品及規格欄位；條碼不同會新增商品／規格。庫存可留空以保留原庫存（新商品預設 0）。</p>

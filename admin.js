@@ -402,7 +402,23 @@ $("faq-download")?.addEventListener("click",()=>{const rows=[...$("faq-admin-lis
  let rows=[],headers=[],mapping={};
  const norm=s=>String(s??"").trim().toLowerCase().replace(/[\s_\-（）()]/g,"");
  const area=$("product-batch-area"),file=$("product-batch-file");
- $("product-batch-template").addEventListener("click",()=>{const csv="商品名稱,品牌,功能分類,商品介紹,商品圖片網址,庫存查詢網址,規格名稱,國際條碼,價格,庫存\r\n三菱 Jetstream 原子筆,三菱,書寫,0.5mm 黑色,https://example.com/image.jpg,,0.5mm 黑色,4710000000000,45,20\r\n三菱 Jetstream 原子筆,三菱,書寫,0.5mm 藍色,,,0.5mm 藍色,4710000000001,45,15\r\n新商品範例,範例品牌,文具,商品介紹,,,一般規格,,30,10\r\n";const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="翔安富文具_商品批次匯入範例.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200)});
+ $("product-batch-template").addEventListener("click",()=>{
+  if(!window.XLSX){$("product-batch-status").textContent="Excel 元件尚未載入，請重新整理管理頁後再下載。";return;}
+  const headers=["商品名稱","品牌","功能分類","商品介紹","商品圖片網址","庫存查詢網址","規格名稱","國際條碼","價格","庫存"];
+  const data=[headers,
+   ["三菱 Jetstream 原子筆","三菱","書寫","0.5mm 黑色","https://example.com/image.jpg","","0.5mm 黑色","4710000000000",45,20],
+   ["三菱 Jetstream 原子筆","三菱","書寫","0.5mm 藍色","","","0.5mm 藍色","4710000000001",45,15]];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  // 預設欄寬方便閱讀，使用者可在 Excel 直接拖曳欄界線調整。
+  ws["!cols"]=[{wch:26},{wch:14},{wch:14},{wch:28},{wch:38},{wch:30},{wch:18},{wch:22},{wch:12},{wch:12}];
+  ws["!freeze"]={xSplit:0,ySplit:1,topLeftCell:"A2",activePane:"bottomLeft",state:"frozen"};
+  ws["!autofilter"]={ref:`A1:${XLSX.utils.encode_col(headers.length-1)}${data.length}`};
+  // 國際條碼欄整欄以文字格式儲存，避免 Excel 轉成科學記號或通用格式。
+  for(let r=2;r<=data.length;r++){const cell=ws[`H${r}`];if(cell){cell.t="s";cell.v=String(cell.v);cell.z="@";}}
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"商品匯入");
+  XLSX.writeFile(wb,"翔安富文具_商品批次匯入範例.xlsx");
+  $("product-batch-status").textContent="已下載 Excel 範例（.xlsx）。國際條碼欄已設定為文字格式，欄寬可在 Excel 中拖曳調整；請使用 Excel 的「另存新檔」保存修改。";
+ });
  function findCol(key){return headers.find(h=>aliases[key].some(a=>norm(h)===norm(a)||norm(h).includes(norm(a))))||""}
  function value(row,key){return String(row[mapping[key]]??"").trim()}
  function barcode(s){return String(s??"").replace(/[\s-]/g,"").trim()}
@@ -424,7 +440,7 @@ $("faq-download")?.addEventListener("click",()=>{const rows=[...$("faq-admin-lis
  }
  file.addEventListener("change",async e=>{
   const f=e.target.files[0];if(!f)return;
-  try{if(!window.XLSX)throw Error("Excel／CSV 讀取元件載入失敗，請重新整理頁面後再試。");const wb=XLSX.read(await f.arrayBuffer(),{type:"array",raw:false});const sh=wb.Sheets[wb.SheetNames[0]];const matrix=XLSX.utils.sheet_to_json(sh,{header:1,defval:"",raw:false});if(!matrix.length)throw Error("檔案沒有資料。");headers=matrix[0].map(v=>String(v??"").trim());rows=matrix.slice(1).filter(r=>r.some(v=>String(v??"").trim())).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??""]).filter(([h])=>h)));
+  try{if(!window.XLSX)throw Error("Excel／CSV 讀取元件載入失敗，請重新整理頁面後再試。");const wb=XLSX.read(await f.arrayBuffer(),{type:"array",raw:true,cellText:false});const sh=wb.Sheets[wb.SheetNames[0]];const matrix=XLSX.utils.sheet_to_json(sh,{header:1,defval:"",raw:true});if(!matrix.length)throw Error("檔案沒有資料。");headers=matrix[0].map(v=>String(v??"").trim());rows=matrix.slice(1).filter(r=>r.some(v=>String(v??"").trim())).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??""]).filter(([h])=>h)));
    mapping={};Object.keys(labels).forEach(k=>mapping[k]=findCol(k));drawMapping();area.hidden=false;preview();$("product-batch-status").textContent=`已讀取 ${rows.length} 列，請確認欄位對應及預覽。`;
   }catch(err){$("product-batch-status").textContent=err.message||"檔案讀取失敗。";area.hidden=false}file.value="";
  });
