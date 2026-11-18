@@ -1,10 +1,5 @@
 {
   "logo": "",
-  "theme": "navy",
-  "discountTiers": [
-    {
-      "threshold": 350,
-      "percent": 10
-    }
-  ]
+  "theme": "sage",
+  "discountTiers": []
 }

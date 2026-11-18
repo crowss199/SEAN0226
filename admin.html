@@ -57,7 +57,7 @@
 </section>
 <section class="panel" id="inventory-sync-panel">
  <h2>商品庫存同步（依國際條碼）</h2>
- <p class="hint">可直接從指定的 Google 試算表「庫存」工作表同步，也可手動匯入 Excel／CSV。Google 試算表固定讀取 A 欄「國際條碼」及 D 欄「庫存數」，只更新官網匹配規格的庫存，不會更動商品名稱、價格、圖片、描述、規格或條碼。試算表需設定為「知道連結的任何人－檢視者」。</p>
+ <p class="hint">可直接從指定的 Google 試算表「庫存」工作表同步，也可手動匯入 Excel／CSV。Google 試算表固定讀取 A 欄「國際條碼」及 D 欄「庫存數」，官網已有的國際條碼只更新庫存；官網找不到的條碼，僅從試算表第 434 列起新增「待補商品」（售價先設 0，需再補商品資料）。試算表第 1–433 列絕不新增。試算表需設定為「知道連結的任何人－檢視者」。</p>
  <div class="inventory-actions">
   <button class="primary" type="button" id="inventory-google-sync">從 Google 試算表「庫存」工作表讀取</button>
   <span class="hint">來源：已設定的公開 Google 試算表；A 欄＝國際條碼，D 欄＝庫存數</span>
@@ -74,10 +74,10 @@
   <p class="hint">若系統沒有自動辨識正確欄位，請在上方自行選擇。條碼會忽略空格及連字號；相同條碼若重複出現，為避免庫存對錯商品，該筆會略過。</p>
   <div id="inventory-summary" class="inventory-summary" aria-live="polite"></div>
   <div class="table-wrap"><table id="inventory-preview"><thead></thead><tbody></tbody></table></div>
-  <div class="actions"><button class="primary" id="inventory-sync-btn" type="button" disabled>套用匹配庫存至官網商品</button><button class="light" id="inventory-cancel-btn" type="button">取消匯入</button></div>
+  <div class="actions"><button class="primary" id="inventory-sync-btn" type="button" disabled>套用庫存並新增待補商品</button><button class="light" id="inventory-cancel-btn" type="button">取消匯入</button></div>
   <p id="inventory-status" class="status" aria-live="polite"></p>
  </div>
- <p class="hint">套用後只會修改匹配規格的庫存數字；其餘商品資料會原樣保留。更新結果先暫存在目前瀏覽器，請再按「下載更新檔」取得完整 products.json，並上傳 GitHub Repository 根目錄。GitHub Pages 靜態網站無法直接改寫線上檔案，因此不會在匯入時自動發布。</p>
+ <p class="hint">套用後會更新既有匹配規格庫存，並依規則新增第 434 列起未匹配的待補商品；第 1–433 列未匹配資料不新增。原有商品其他資料會原樣保留。更新結果先暫存在目前瀏覽器，請再按「下載更新檔」取得完整 products.json，並上傳 GitHub Repository 根目錄。GitHub Pages 靜態網站無法直接改寫線上檔案，因此不會在匯入時自動發布。</p>
 </section>
 <section class="panel"><div class="list-head"><h2>目前商品 <span id="count"></span></h2><div class="actions"><button class="light" id="import-btn" type="button">匯入 products.json</button><input type="file" id="import-file" accept=".json,application/json" hidden><button class="primary" id="download-btn" type="button">下載更新檔</button></div></div><p class="hint">新增、修改或刪除商品都不會自動下載。所有修改會暫存在目前瀏覽器；全部完成後，請按右上方「下載更新檔」一次下載 products.json，再上傳 GitHub 根目錄覆蓋舊檔。</p><div class="bulk-delete-bar"><label><input type="checkbox" id="select-all-products"> 全選目前商品</label><span id="selected-product-count">已選取 0 件</span><button class="delete" id="bulk-delete-products" type="button" disabled>刪除勾選商品</button></div><div id="product-list" class="product-list"></div></section>
 <section class="panel" id="stores-panel">
