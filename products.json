@@ -1,1 +1,138 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "三菱 2.0mm筆芯專用削鉛筆機_DPS6001P",
+    "brand": "三菱鉛筆",
+    "functionCategory": "削鉛筆機",
+    "desc": "",
+    "image": "https://images.plurk.com/6xvT6sugeGtrI1N3wJoTbw.jpg",
+    "url": "https://docs.google.com/spreadsheets/d/1NBtKCn8Z4HNASak8g4EFGLNocnAYtR_mOIy-S_nU2e8/edit?gid=0#gid=0&range=D1",
+    "price": 180,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "單個",
+        "barcode": "4902778013328",
+        "price": 180,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "三菱 自動鉛筆 阿發細桿 0.5MM M5809GG",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 190,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "白色",
+        "barcode": "4902778247518",
+        "price": 190,
+        "stock": 0
+      },
+      {
+        "name": "灰銀色",
+        "barcode": "4902778260586",
+        "price": 190,
+        "stock": 0
+      },
+      {
+        "name": "紅色",
+        "barcode": "4902778260579",
+        "price": 190,
+        "stock": 0
+      },
+      {
+        "name": "海軍藍",
+        "barcode": "4902778247525",
+        "price": 190,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "三菱 自動鉛筆 阿發搖搖 粗桿 0.5MM M5619GG",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 150,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "白色",
+        "barcode": "4902778247464",
+        "price": 150,
+        "stock": 0
+      },
+      {
+        "name": "灰銀色",
+        "barcode": "4902778260555",
+        "price": 150,
+        "stock": 0
+      },
+      {
+        "name": "紅色",
+        "barcode": "4902778260548",
+        "price": 150,
+        "stock": 0
+      },
+      {
+        "name": "海軍色",
+        "barcode": "4902778247471",
+        "price": 150,
+        "stock": 0
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "三菱 自動鉛筆 製圖552系列",
+    "brand": "三菱鉛筆",
+    "functionCategory": "自動鉛筆",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 130,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "0.3mm",
+        "barcode": "4902778364260",
+        "price": 130,
+        "stock": 0
+      },
+      {
+        "name": "0.4mm",
+        "barcode": "4902778364277",
+        "price": 130,
+        "stock": 0
+      },
+      {
+        "name": "0.5mm",
+        "barcode": "4902778364284",
+        "price": 130,
+        "stock": 0
+      },
+      {
+        "name": "0.7mm",
+        "barcode": "4902778364291",
+        "price": 130,
+        "stock": 0
+      },
+      {
+        "name": "0.9mm",
+        "barcode": "4902778364307",
+        "price": 130,
+        "stock": 0
+      }
+    ]
+  }
+]
