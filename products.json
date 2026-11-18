@@ -61,7 +61,7 @@
     "brand": "三菱鉛筆",
     "functionCategory": "自動鉛筆",
     "desc": "",
-    "image": "",
+    "image": "https://images.plurk.com/qdVV96MYS3DFv17kRe0hm.jpg",
     "url": "",
     "price": 150,
     "category": "writing",
@@ -73,7 +73,7 @@
         "stock": 0
       },
       {
-        "name": "0.6灰銀色",
+        "name": "0.5灰銀色",
         "barcode": "4902778260555",
         "price": 150,
         "stock": 0
