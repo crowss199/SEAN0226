@@ -190,6 +190,32 @@ const inventoryBarcodeAliases=["國際條碼","商品國際條碼","商品條碼
 const inventoryStockAliases=["庫存","庫存量","庫存數量","現有庫存","可用庫存","實際庫存","商品庫存","目前庫存","Stock","Qty","Quantity","Available","On Hand"];
 let inventorySourceRows=[],inventoryHeaders=[],inventorySourceName="",inventoryHeaderAt=-1;
 function normalizeInventoryBarcode(value){return String(value??"").trim().replace(/^'+/,"").replace(/[\s　-]/g,"").toUpperCase()}
+// 從公開 Google 試算表指定的「庫存」工作表讀取 A 欄國際條碼及 D 欄庫存數。
+const INVENTORY_SHEET_ID="1NBtKCn8Z4HNASak8g4EFGLNocnAYtR_mOIy-S_nU2e8";
+let googleSheetCallbackSeq=0;
+function loadPublicGoogleInventory(){
+ return new Promise((resolve,reject)=>{
+  const callbackName="__xiangAnInventoryCallback"+(++googleSheetCallbackSeq);
+  const script=document.createElement("script");let settled=false;
+  const cleanup=()=>{if(script.parentNode)script.parentNode.removeChild(script);try{delete window[callbackName]}catch{window[callbackName]=undefined}};
+  const finish=(fn,value)=>{if(settled)return;settled=true;clearTimeout(timer);cleanup();fn(value)};
+  window[callbackName]=response=>{
+   if(!response||response.status!=="ok"||!response.table){finish(reject,new Error("Google 試算表未能回傳資料。請確認已將檔案設為「知道連結的任何人－檢視者」，且工作表名稱為「庫存」。"));return;}
+   const rows=(response.table.rows||[]).map(row=>{
+    const cells=row.c||[];
+    const cellValue=(index)=>{const cell=cells[index];if(!cell)return "";return cell.f!==null&&cell.f!==undefined&&String(cell.f).trim()!==""?cell.f:(cell.v??"")};
+    return [cellValue(0),"","",cellValue(3)];
+   }).filter(row=>String(row[0]).trim()!==""||String(row[3]).trim()!=="");
+   if(!rows.length){finish(reject,new Error("已連線，但「庫存」工作表 A、D 欄沒有可同步的資料。請確認第一列是欄位名稱，資料從第二列開始。"));return;}
+   finish(resolve,rows);
+  };
+  const timer=setTimeout(()=>finish(reject,new Error("連線逾時。請確認試算表已公開為檢視者，並稍後再試。")),20000);
+  const params=new URLSearchParams({sheet:"庫存",tqx:"out:json;responseHandler:"+callbackName});
+  script.onerror=()=>finish(reject,new Error("無法讀取 Google 試算表。請檢查公開分享權限及網路連線。"));
+  script.src="https://docs.google.com/spreadsheets/d/"+INVENTORY_SHEET_ID+"/gviz/tq?"+params.toString();
+  document.head.appendChild(script);
+ });
+}
 function inventoryHeaderScore(cells){
  const labels=cells.map(v=>norm(v));
  const barcode=labels.some(h=>inventoryBarcodeAliases.some(a=>h===norm(a)||h.includes(norm(a))));
@@ -217,6 +243,20 @@ function renderInventoryPreview(){
  $("inventory-sync-btn").disabled=report.plans.length===0;
  $("inventory-status").textContent=`預覽前 ${Math.min(8,rows.length)} 筆。套用時只會更新唯一匹配的國際條碼。`;
 }
+$("inventory-google-sync")?.addEventListener("click",async()=>{
+ const button=$("inventory-google-sync");button.disabled=true;button.textContent="正在讀取 Google 試算表…";
+ $("inventory-status").textContent="正在連線至公開試算表的「庫存」工作表，讀取 A 欄國際條碼及 D 欄庫存數。";
+ try{
+  const rows=await loadPublicGoogleInventory();
+  inventoryHeaders=["國際條碼","欄B","欄C","庫存數"];
+  inventorySourceRows=rows;inventorySourceName="Google 試算表－庫存";inventoryHeaderAt=0;
+  $("inventory-barcode-col").innerHTML=inventoryColumnOptions();$("inventory-stock-col").innerHTML=inventoryColumnOptions();
+  $("inventory-barcode-col").value="0";$("inventory-stock-col").value="3";
+  $("inventory-mapping-area").hidden=false;renderInventoryPreview();
+  $("inventory-status").textContent=`已讀取 Google 試算表「庫存」工作表，共 ${rows.length} 筆；固定使用 A 欄國際條碼及 D 欄庫存數。請確認預覽後按「套用匹配庫存至官網商品」。`;
+ }catch(err){$("inventory-status").textContent=err.message||"讀取 Google 試算表失敗。";}
+ finally{button.disabled=false;button.textContent="從 Google 試算表「庫存」工作表讀取";}
+});
 $("inventory-file")?.addEventListener("change",async e=>{
  const file=e.target.files[0];if(!file)return;
  try{

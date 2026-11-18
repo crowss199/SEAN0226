@@ -57,7 +57,11 @@
 </section>
 <section class="panel" id="inventory-sync-panel">
  <h2>商品庫存同步（依國際條碼）</h2>
- <p class="hint">從商品庫存試算表下載 Excel（.xlsx／.xls）或 CSV，匯入後系統會用「國際條碼」比對官網各商品規格，只更新對應規格的庫存，不會更動商品名稱、各規格價格、圖片、描述、規格、國際條碼或其他商品資料。建議試算表至少有「國際條碼」及「庫存」兩欄，第一個工作表需包含欄位標題。</p>
+ <p class="hint">可直接從指定的 Google 試算表「庫存」工作表同步，也可手動匯入 Excel／CSV。Google 試算表固定讀取 A 欄「國際條碼」及 D 欄「庫存數」，只更新官網匹配規格的庫存，不會更動商品名稱、價格、圖片、描述、規格或條碼。試算表需設定為「知道連結的任何人－檢視者」。</p>
+ <div class="inventory-actions">
+  <button class="primary" type="button" id="inventory-google-sync">從 Google 試算表「庫存」工作表讀取</button>
+  <span class="hint">來源：已設定的公開 Google 試算表；A 欄＝國際條碼，D 欄＝庫存數</span>
+ </div>
  <div class="inventory-actions">
   <label class="file-pick">選擇商品庫存試算表<input type="file" id="inventory-file" accept=".xlsx,.xls,.csv" /></label>
   <button class="light" type="button" id="inventory-template">下載庫存表範例 CSV</button>
