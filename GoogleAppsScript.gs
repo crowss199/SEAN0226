@@ -200,6 +200,10 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu("翔安富文具")
     .addItem("定位目前訂單的寄件編號欄", "selectTrackingCellForSelectedRow")
     .addItem("通知目前選取訂單已出貨", "sendShipmentNotificationForSelectedRow")
+    .addSeparator()
+    .addItem("設定每小時庫存自動同步", "setupHourlyInventorySync")
+    .addItem("立即同步庫存", "runHourlyInventorySyncNow")
+    .addItem("查看庫存自動同步狀態", "showInventorySyncStatus")
     .addToUi();
 }
 
@@ -446,3 +450,186 @@ function doGet(e) {
 
 
 // 出貨通知改為手動按選單寄送，避免修改狀態時意外重複寄信。
+
+
+// ===== 翔安富文具：每小時將「庫存」工作表同步至 GitHub Pages products.json =====
+// 安全性：GitHub Token 僅存於 Apps Script Script Properties，絕不可放進公開前端檔案。
+const INVENTORY_SYNC_SPREADSHEET_ID = "1NBtKCn8Z4HNASak8g4EFGLNocnAYtR_mOIy-S_nU2e8";
+const INVENTORY_SYNC_SHEET_NAME = "庫存";
+const INVENTORY_SYNC_FIRST_CREATE_ROW = 434; // 保留使用者指定：第 1–433 列不新增
+const INVENTORY_SYNC_PROPERTY_LAST_RUN = "INVENTORY_SYNC_LAST_RUN";
+const INVENTORY_SYNC_PROPERTY_LAST_RESULT = "INVENTORY_SYNC_LAST_RESULT";
+const INVENTORY_SYNC_PROPERTY_LAST_ERROR = "INVENTORY_SYNC_LAST_ERROR";
+
+function setupHourlyInventorySync() {
+  const props = PropertiesService.getScriptProperties();
+  const required = ["GITHUB_TOKEN", "GITHUB_OWNER", "GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_FILE_PATH"];
+  const missing = required.filter(k => !String(props.getProperty(k) || "").trim());
+  if (missing.length) {
+    SpreadsheetApp.getUi().alert(
+      "尚未設定 GitHub 連線資料：" + missing.join("、") + "\n\n請到 Apps Script「專案設定」→「指令碼屬性」新增這些屬性，再重新執行本功能。\n\nGITHUB_OWNER=crowss199\nGITHUB_REPO=SEAN0226\nGITHUB_BRANCH=main\nGITHUB_FILE_PATH=products.json\nGITHUB_TOKEN=具有 Repository Contents 讀寫權限的 Token"
+    );
+    return;
+  }
+  const ss = SpreadsheetApp.openById(INVENTORY_SYNC_SPREADSHEET_ID);
+  if (!ss.getSheetByName(INVENTORY_SYNC_SHEET_NAME)) throw new Error("找不到「庫存」工作表，請確認工作表名稱。");
+  // 避免重複建立多個每小時觸發器。
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === "runHourlyInventorySync").forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger("runHourlyInventorySync").timeBased().everyHours(1).create();
+  SpreadsheetApp.getUi().alert("已建立每小時庫存自動同步。Google 會在每小時時段內安排執行，不保證整點精準啟動。建議接著執行「立即同步庫存」測試一次。");
+}
+
+function runHourlyInventorySyncNow() {
+  const ui = SpreadsheetApp.getUi();
+  try {
+    const result = runHourlyInventorySync();
+    ui.alert("庫存同步完成", "讀取資料：" + result.sourceRows + " 筆\n更新既有規格：" + result.updated + " 筆\n新增待補商品：" + result.created + " 筆\n第 1–433 列未匹配略過：" + result.excluded + " 筆\n試算表重複條碼：" + result.duplicateSource + " 筆\n官網重複條碼：" + result.duplicateWebsite + " 筆\n無效庫存：" + result.invalid + " 筆", ui.ButtonSet.OK);
+  } catch (err) {
+    ui.alert("庫存同步失敗", String(err && err.message || err), ui.ButtonSet.OK);
+    throw err;
+  }
+}
+
+function showInventorySyncStatus() {
+  const p = PropertiesService.getScriptProperties();
+  const lastRun = p.getProperty(INVENTORY_SYNC_PROPERTY_LAST_RUN) || "尚未執行";
+  const result = p.getProperty(INVENTORY_SYNC_PROPERTY_LAST_RESULT) || "尚無成功紀錄";
+  const error = p.getProperty(INVENTORY_SYNC_PROPERTY_LAST_ERROR) || "無";
+  const triggers = ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === "runHourlyInventorySync").length;
+  SpreadsheetApp.getUi().alert("庫存自動同步狀態", "每小時觸發器：" + (triggers ? "已啟用" : "未啟用") + "\n最近執行：" + lastRun + "\n最近結果：" + result + "\n最近錯誤：" + error, SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+function runHourlyInventorySync() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(25000)) throw new Error("另一個庫存同步工作正在執行，本次略過。");
+  const props = PropertiesService.getScriptProperties();
+  try {
+    const cfg = getInventoryGitHubConfig_();
+    const ss = SpreadsheetApp.openById(INVENTORY_SYNC_SPREADSHEET_ID);
+    const sh = ss.getSheetByName(INVENTORY_SYNC_SHEET_NAME);
+    if (!sh) throw new Error("找不到「庫存」工作表。");
+    const lastRow = sh.getLastRow();
+    if (lastRow < 2) throw new Error("「庫存」工作表沒有資料列。");
+    // 以顯示值讀取，避免條碼被轉成科學記號；只取 A:D，A 欄條碼、D 欄庫存。
+    const rows = sh.getRange(2, 1, lastRow - 1, 4).getDisplayValues();
+    const source = new Map();
+    let blank = 0, invalid = 0;
+    rows.forEach((r, i) => {
+      const rowNumber = i + 2;
+      const barcode = normalizeInventorySyncBarcode_(r[0]);
+      if (!barcode) { blank++; return; }
+      const stockText = String(r[3] == null ? "" : r[3]).trim().replace(/[，,\s　]/g, "");
+      if (!/^\d+$/.test(stockText)) { invalid++; return; }
+      if (!source.has(barcode)) source.set(barcode, []);
+      source.get(barcode).push({ stock: Number(stockText), rowNumber: rowNumber });
+    });
+
+    const file = getGitHubProductsFile_(cfg);
+    let products;
+    try { products = JSON.parse(file.text); } catch (e) { throw new Error("GitHub products.json 不是有效 JSON，已停止同步，沒有修改檔案。"); }
+    if (!Array.isArray(products)) throw new Error("GitHub products.json 格式不是商品陣列，已停止同步。");
+
+    const website = new Map();
+    products.forEach(product => (Array.isArray(product.variants) ? product.variants : []).forEach(variant => {
+      const barcode = normalizeInventorySyncBarcode_(variant.barcode || variant.internationalBarcode || "");
+      if (!barcode) return;
+      if (!website.has(barcode)) website.set(barcode, []);
+      website.get(barcode).push(variant);
+    }));
+
+    let updated = 0, created = 0, excluded = 0, duplicateSource = 0, duplicateWebsite = 0;
+    let nextId = products.reduce((m, p) => Math.max(m, Number(p.id) || 0), 0) + 1;
+    source.forEach((records, barcode) => {
+      if (records.length !== 1) { duplicateSource++; return; }
+      const rec = records[0];
+      const matches = website.get(barcode) || [];
+      if (matches.length > 1) { duplicateWebsite++; return; }
+      if (matches.length === 1) {
+        matches[0].stock = rec.stock;
+        updated++;
+        return;
+      }
+      if (rec.rowNumber < INVENTORY_SYNC_FIRST_CREATE_ROW) { excluded++; return; }
+      products.push({
+        id: nextId++, name: "待補商品 " + barcode, brand: "", functionCategory: "待補商品資料",
+        desc: "此商品由庫存試算表依國際條碼自動建立，請至商品管理補上正式名稱、分類、圖片及售價。",
+        image: "", url: "", price: 0, category: "writing",
+        variants: [{ name: "待補規格", barcode: barcode, price: 0, stock: rec.stock }]
+      });
+      created++;
+    });
+
+    // 即使本次沒有庫存變更，也不必產生無意義的 GitHub commit。
+    if (updated + created > 0) putGitHubProductsFile_(cfg, file.sha, products);
+    const result = {
+      sourceRows: rows.length, updated: updated, created: created, excluded: excluded,
+      duplicateSource: duplicateSource, duplicateWebsite: duplicateWebsite, invalid: invalid, blank: blank,
+      committed: updated + created > 0
+    };
+    const now = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "Asia/Taipei", "yyyy-MM-dd HH:mm:ss");
+    props.setProperty(INVENTORY_SYNC_PROPERTY_LAST_RUN, now);
+    props.setProperty(INVENTORY_SYNC_PROPERTY_LAST_RESULT, JSON.stringify(result));
+    props.deleteProperty(INVENTORY_SYNC_PROPERTY_LAST_ERROR);
+    return result;
+  } catch (err) {
+    props.setProperty(INVENTORY_SYNC_PROPERTY_LAST_ERROR, String(err && err.message || err).slice(0, 1000));
+    throw err;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getInventoryGitHubConfig_() {
+  const p = PropertiesService.getScriptProperties();
+  const cfg = {
+    token: String(p.getProperty("GITHUB_TOKEN") || "").trim(),
+    owner: String(p.getProperty("GITHUB_OWNER") || "").trim(),
+    repo: String(p.getProperty("GITHUB_REPO") || "").trim(),
+    branch: String(p.getProperty("GITHUB_BRANCH") || "").trim(),
+    path: String(p.getProperty("GITHUB_FILE_PATH") || "").trim()
+  };
+  const missing = Object.keys(cfg).filter(k => !cfg[k]);
+  if (missing.length) throw new Error("GitHub Script Properties 尚未設定完整（GITHUB_TOKEN／OWNER／REPO／BRANCH／FILE_PATH）。");
+  return cfg;
+}
+
+function normalizeInventorySyncBarcode_(value) {
+  return String(value == null ? "" : value).replace(/^'+/, "").replace(/[\s　-]/g, "").trim().toUpperCase();
+}
+
+function githubApiRequest_(url, cfg, method, payload) {
+  const options = {
+    method: method || "get", muteHttpExceptions: true,
+    headers: {
+      Authorization: "Bearer " + cfg.token,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28"
+    }
+  };
+  if (payload) { options.contentType = "application/json"; options.payload = JSON.stringify(payload); }
+  const response = UrlFetchApp.fetch(url, options);
+  const code = response.getResponseCode();
+  const body = response.getContentText();
+  if (code < 200 || code >= 300) throw new Error("GitHub API 錯誤（" + code + "）：「" + body.slice(0, 500) + "」。請確認 Token 權限、Repository、分支及檔案路徑。");
+  return body ? JSON.parse(body) : {};
+}
+
+function getGitHubProductsFile_(cfg) {
+  const url = "https://api.github.com/repos/" + encodeURIComponent(cfg.owner) + "/" + encodeURIComponent(cfg.repo) + "/contents/" + cfg.path.split("/").map(encodeURIComponent).join("/") + "?ref=" + encodeURIComponent(cfg.branch);
+  const data = githubApiRequest_(url, cfg, "get");
+  if (!data.content || !data.sha) throw new Error("GitHub 未回傳 products.json 內容或 SHA。");
+  const bytes = Utilities.base64Decode(String(data.content).replace(/\s/g, ""));
+  return { sha: data.sha, text: Utilities.newBlob(bytes).getDataAsString("UTF-8") };
+}
+
+function putGitHubProductsFile_(cfg, sha, products) {
+  const url = "https://api.github.com/repos/" + encodeURIComponent(cfg.owner) + "/" + encodeURIComponent(cfg.repo) + "/contents/" + cfg.path.split("/").map(encodeURIComponent).join("/");
+  const json = JSON.stringify(products, null, 2) + "\n";
+  const content = Utilities.base64Encode(Utilities.newBlob(json, "application/json", "products.json").getBytes());
+  githubApiRequest_(url, cfg, "put", {
+    message: "自動同步官網庫存（Google 試算表）",
+    content: content,
+    sha: sha,
+    branch: cfg.branch
+  });
+}

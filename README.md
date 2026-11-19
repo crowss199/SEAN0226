@@ -233,3 +233,8 @@ V15 修正舊版 `setup()` 新增欄位時可能覆蓋最後一個既有標題�
 ## V35 Google 試算表庫存讀取定位修正
 - Google 試算表庫存同步改以使用者提供的工作表 gid=2044525889 定位，不再只依賴分頁名稱查找。
 - 仍固定讀取 A 欄國際條碼、D 欄庫存數；只更新官網匹配規格庫存。
+
+
+## V37 每小時庫存自動同步
+
+請參閱 `README_V37_每小時自動庫存同步.txt`。本版新增 Apps Script 每小時觸發器，透過安全儲存於 Script Properties 的 GitHub Token 更新 Repository 根目錄 `products.json`。首次必須設定 GITHUB_TOKEN、GITHUB_OWNER、GITHUB_REPO、GITHUB_BRANCH、GITHUB_FILE_PATH，並從試算表選單建立觸發器。
