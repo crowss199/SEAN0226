@@ -1,0 +1,49 @@
+翔安富文具：官網庫存即時讀取 Google 試算表
+
+這次改用 Apps Script JSONP 只讀 API：
+- Google 試算表「文具資料」A 欄：國際條碼
+- Google 試算表「文具資料」D 欄：庫存
+- 官網首頁及結帳頁載入時讀取最新庫存
+- 官網頁面每 60 秒及重新切回頁面時更新
+- 下單時仍由既有 doPost() 在 ScriptLock 保護下再次驗證並扣庫存
+- 未登錄或重複條碼會顯示未同步／暫停販售，避免以舊庫存造成超賣
+
+重要：先前診斷回傳「文具資料 lastRow=2」，目前只確認到第 2 列一筆商品資料。
+因此初次同步時，只能同步該一筆有登錄條碼的商品；其他沒有登錄在「文具資料」的官網商品會暫停加入購物車。
+請先將需要販售的商品國際條碼及庫存補齊到「文具資料」A、D 欄，再逐步開放販售。
+
+一、Apps Script（先做）
+1. 開啟目前綁定試算表的 Apps Script 專案。
+2. 不要用本 ZIP 內舊的 GoogleAppsScript.gs 覆蓋整個專案。
+3. 開啟 GAS_inventory_api_patch.gs。
+4. 將檔案前半段的 normalizeWebsiteInventoryBarcode_()、getWebsiteInventorySnapshot_() 貼到現有程式碼中（建議放在 doGet 上方）。
+5. 用檔案中的新版 doGet(e) 整段取代目前舊版 doGet(e)。不要留下兩個同名 doGet。
+6. 保留既有 doPost、取消訂單、出貨通知、庫存扣除等函式，不要覆蓋。
+7. 儲存後，從函式選單執行 testWebsiteInventorySnapshot()。
+8. 在「執行項目」查看結果：matchedItems 應至少包含目前已登錄的商品；sampleBarcode4902778013328 應回傳目前 D 欄庫存。
+9. 測試成功後，部署 > 管理部署作業 > 編輯目前網頁應用程式 > 新增版本 > 部署。執行身分維持「我」，誰可以存取維持「所有人」。原 /exec URL 不需更換。
+10. 另開新分頁測試：https://script.google.com/macros/s/AKfycbztpi0tZY1GozLJsND37uN1JN7v32oHiyk4pt0nceSxZ1jo3CMOJSk5pApboFQkDSZqhw/exec?action=inventory
+    應看到 JSON，包含 ok:true、sheetName:文具資料、items、sourceRows。
+
+二、GitHub Pages 網站檔案
+ZIP 內放的是需要更新的網站檔案：
+- script.js
+- checkout.js
+- style.css
+- index.html
+- checkout.html
+
+將這五個檔案覆蓋 GitHub Repository 根目錄同名檔案，然後 Commit changes，等待 GitHub Pages 部署成功。
+
+三、同步行為
+- 首次載入首頁與結帳頁會讀取試算表庫存。
+- 已存在於「文具資料」的商品規格，會使用 D 欄即時庫存顯示。
+- 沒有登錄條碼、重複條碼或庫存格式錯誤的商品，會暫停加入購物車／結帳。
+- 已開啟頁面每 60 秒及使用者切回頁面時更新一次。
+- 下單時會再次讀取庫存，真正扣庫存仍由既有 doPost() 負責。
+
+四、注意
+- 這是即時讀取，不會把庫存寫回 products.json，也不需要 GitHub Token。
+- 已開啟頁面的庫存最多可能在 60 秒內短暫過期；最後仍以 doPost() 的試算表庫存檢查為準。
+- 不要重複建立 doGet 或 doPost；不要整份覆蓋 Apps Script。
+- 先不要拿正式訂單測試。先驗證 API 回傳，再檢查首頁顯示。
