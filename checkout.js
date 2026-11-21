@@ -20,6 +20,35 @@ function renderSummary(){
 }
 function updateTotal(){const fee=Number(document.querySelector('[name="shippingFee"]').value||0),sub=subtotal(),discount=discountFor(sub);$("checkout-shipping").textContent=money(fee);$("checkout-discount-row").hidden=discount.amount<=0;$("checkout-discount").textContent="-"+money(discount.amount);$("checkout-discount-label").textContent=discount.amount?`滿 NT$${discount.threshold.toLocaleString("zh-TW")} 折 ${discount.percent}%`:"滿額折扣";$("checkout-grand-total").textContent=money(Math.max(0,sub-discount.amount)+fee)}
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+// 透過既有 doGet(phone, callback) JSONP 確認訂單是否真的出現在「官網訂單」工作表。
+function queryOrdersByPhone(endpoint,phone){
+ return new Promise((resolve,reject)=>{
+  const callbackName="__orderCheck_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+  const script=document.createElement("script");
+  let finished=false;
+  const cleanup=()=>{if(finished)return;finished=true;clearTimeout(timer);script.remove();try{delete window[callbackName]}catch(_){window[callbackName]=undefined}};
+  const timer=setTimeout(()=>{cleanup();reject(new Error("查詢訂單逾時"))},10000);
+  window[callbackName]=data=>{cleanup();resolve(data)};
+  script.onerror=()=>{cleanup();reject(new Error("無法連線查詢訂單"))};
+  const url=new URL(endpoint);
+  url.searchParams.set("phone",phone);
+  url.searchParams.set("callback",callbackName);
+  url.searchParams.set("_",String(Date.now()));
+  script.src=url.toString();
+  document.head.appendChild(script);
+ });
+}
+async function waitForOrderSaved(endpoint,phone,orderId){
+ // doPost 使用 no-cors，瀏覽器不能讀取它的回應；改用既有手機訂單查詢 JSONP 核對訂單編號。
+ for(let attempt=0;attempt<8;attempt++){
+  if(attempt)await new Promise(resolve=>setTimeout(resolve,1200));
+  const result=await queryOrdersByPhone(endpoint,phone);
+  if(result&&result.ok&&Array.isArray(result.orders)&&result.orders.some(order=>String(order.orderId)===String(orderId)))return true;
+  if(result&&!result.ok)throw new Error(result.error||"訂單查詢失敗");
+ }
+ return false;
+}
 document.querySelector('[name="shippingFee"]').addEventListener("input",updateTotal);
 function clearSelectedStore(){
  selectedStore=null;
@@ -86,10 +115,22 @@ $("checkout-form").addEventListener("submit",async e=>{
  const order={orderId:"XAFW"+Date.now(),createdAt:new Date().toISOString(),recipient:String(f.get("recipient")).trim(),phone:String(f.get("phone")).trim(),email:String(f.get("email")).trim(),storeId:String(f.get("storeId")).trim(),storeName:String(f.get("storeName")||"").trim(),storeAddress:String(f.get("storeAddress")||"").trim(),temperature:f.get("temperature"),items,productAmount,discountAmount:discount.amount,discountThreshold:discount.threshold,discountPercent:discount.percent,shippingFee:fee,totalAmount,note:String(f.get("note")||""),social:String(f.get("social")||"")};
  const btn=$("checkout-submit");btn.disabled=true;btn.textContent="送出中…";$("checkout-status").textContent="正在送出訂單…";
  try{
+  // 先送出訂單；no-cors 回應本身不可讀，因此接著用手機查詢 API 核對訂單編號。
   await fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(order)});
+  const confirmed=await waitForOrderSaved(endpoint,order.phone,order.orderId);
+  if(!confirmed){
+   localStorage.setItem(ORDER_KEY,JSON.stringify({orderId:order.orderId,totalAmount:order.totalAmount,recipient:order.recipient,createdAt:order.createdAt,unconfirmed:true}));
+   $("checkout-status").textContent=`尚未查到訂單 ${order.orderId}，可能仍在處理中。請先不要重複送出，保留此畫面並聯絡翔安富文具確認。`;
+   btn.disabled=true;btn.textContent="訂單確認中";return;
+  }
   localStorage.setItem(ORDER_KEY,JSON.stringify({orderId:order.orderId,totalAmount:order.totalAmount,recipient:order.recipient,createdAt:order.createdAt}));
   localStorage.removeItem(CART_KEY);
   location.href="order-success.html";
- }catch(err){$("checkout-status").textContent="送出失敗，請確認網路後再試。";btn.disabled=false;btn.textContent="確認送出訂單"}
+ }catch(err){
+  localStorage.setItem(ORDER_KEY,JSON.stringify({orderId:order.orderId,totalAmount:order.totalAmount,recipient:order.recipient,createdAt:order.createdAt,unconfirmed:true}));
+  $("checkout-status").textContent=`訂單送出後尚無法確認是否寫入試算表（訂單編號：${order.orderId}）。請先不要重複送出，稍後查詢訂單或聯絡翔安富文具確認。`;
+  btn.disabled=true;btn.textContent="等待確認";
+  console.error("訂單送出／確認失敗",err);
+ }
 });
 init();
