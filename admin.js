@@ -1,8 +1,8 @@
 const $=id=>document.getElementById(id),MALL="#";let products=[];
 
 
-// Upload product image locally and embed it in products.json as a data URL.
-let selectedProductImage="";
+// 多張商品圖片：保留既有圖片，並可一次追加多張上傳圖片。
+let selectedProductImages=[];
 function readImageFile(file,maxBytes=1500000){
  return new Promise((resolve,reject)=>{
   if(!file||!file.type.startsWith("image/"))return reject(Error("請選擇圖片檔案。"));
@@ -13,15 +13,31 @@ function readImageFile(file,maxBytes=1500000){
   reader.readAsDataURL(file);
  });
 }
+function renderImagePreview(){
+ const box=$("image-preview");
+ const urls=[...new Set([String($("image").value||"").trim(),...selectedProductImages].filter(Boolean))];
+ box.hidden=!urls.length;
+ box.innerHTML=urls.map((url,i)=>`<div class="admin-image-thumb"><img alt="商品圖片${i+1}" src="${url}"><span>${i===0?"主圖":`圖片 ${i+1}`}</span><button type="button" data-remove-product-image="${i}" aria-label="移除圖片">×</button></div>`).join("");
+}
+$("image").addEventListener("change",renderImagePreview);
 $("image-file").addEventListener("change",async e=>{
- const file=e.target.files[0];if(!file)return;
+ const files=[...e.target.files];if(!files.length)return;
  try{
-  selectedProductImage=await readImageFile(file);
-  $("image").value=selectedProductImage;
-  $("image-preview").hidden=false;
-  $("image-preview").innerHTML=`<img alt="商品圖片預覽" src="${selectedProductImage}">`;
-  $("status").textContent="商品圖片已載入，提交商品後會一併放入 products.json。";
+  const loaded=await Promise.all(files.map(file=>readImageFile(file)));
+  selectedProductImages=[...selectedProductImages,...loaded];
+  renderImagePreview();
+  $("status").textContent=`已載入 ${loaded.length} 張商品圖片；提交商品後會一併放入 products.json。`;
  }catch(err){$("status").textContent=err.message}
+ e.target.value="";
+});
+$("image-preview").addEventListener("click",e=>{
+ const btn=e.target.closest("[data-remove-product-image]");if(!btn)return;
+ const index=Number(btn.dataset.removeProductImage);
+ const urls=[...new Set([String($("image").value||"").trim(),...selectedProductImages].filter(Boolean))];
+ const removed=urls[index];
+ if(removed===String($("image").value||"").trim())$("image").value="";
+ selectedProductImages=selectedProductImages.filter(x=>x!==removed);
+ renderImagePreview();
 });
 
 const AUTH_KEY="xiangAnAdminSession";
@@ -55,7 +71,8 @@ $("logout").addEventListener("click",logout);
 const fields=["name","brand","function-category","desc","image","url"];
 function normalizeProduct(p){
  const source=Array.isArray(p.variants)&&p.variants.length?p.variants:[{name:"一般規格",stock:p.stock===undefined?null:p.stock,price:p.price}];
- return {...p,variants:source.map((v,i)=>{
+ const imageList=Array.isArray(p.images)&&p.images.length?p.images.filter(Boolean):[p.image].filter(Boolean);
+ return {...p,image:imageList[0]||p.image||"",images:imageList,variants:source.map((v,i)=>{
   const rawPrice=v.price===undefined||v.price===null||v.price===""?p.price:v.price;
   const price=Number(rawPrice);
   const rawStock=v.stock;
@@ -129,7 +146,7 @@ function render(){
  updateBulkDeleteUI();
 }
 function reset(){
- $("product-form").reset();selectedProductImage="";$("image-preview").hidden=true;$("image-preview").innerHTML="";
+ $("product-form").reset();selectedProductImages=[];$("image-preview").hidden=true;$("image-preview").innerHTML="";
  $("edit-id").value="";$("form-title").textContent="新增商品";$("submit-btn").textContent="＋ 加入商品清單";$("cancel-edit").hidden=true;
  variantRows([{name:"一般規格",barcode:"",price:"",stock:0}]);
 }
@@ -139,7 +156,7 @@ $("product-form").addEventListener("submit",e=>{
  const variants=readVariantRows();
  if(!variants.length||variants.some(v=>!v.name||!Number.isInteger(v.price)||v.price<0)){$("status").textContent="請填寫每個規格名稱及有效的價格（0 元以上整數）。";return}
  const existing=products.find(x=>Number(x.id)===id)||{};
- const p={...existing,id,brand:$("brand").value.trim(),functionCategory:$("function-category").value.trim(),name:$("name").value.trim(),price:variants[0].price,desc:$("desc").value.trim(),image:$("image").value.trim(),url:$("url").value.trim(),category:existing.category||"writing",variants};
+ const p={...existing,id,brand:$("brand").value.trim(),functionCategory:$("function-category").value.trim(),name:$("name").value.trim(),price:variants[0].price,desc:$("desc").value.trim(),image:([String($("image").value||"").trim(),...selectedProductImages].filter(Boolean)[0]||""),images:[...new Set([String($("image").value||"").trim(),...selectedProductImages].filter(Boolean))],url:$("url").value.trim(),category:existing.category||"writing",variants};
  if(!p.name){$("status").textContent="請填寫商品名稱。";return}
  let i=products.findIndex(x=>Number(x.id)===id);i>=0?products[i]=p:products.push(p);
  reset();render();saveProductDraft();$("status").textContent="商品已儲存。可繼續新增或修改其他商品，全部完成後再按「下載更新檔」一次下載 products.json。";
@@ -164,6 +181,8 @@ $("product-list").addEventListener("click",e=>{
  if(eb){
   let p=products.find(x=>Number(x.id)===Number(eb.dataset.edit));if(!p)return;
   fields.forEach(k=>{const value=p[k==="function-category"?"functionCategory":k];$(k).value=(k==="url"&&value==="#")?"":(value??"")});
+  selectedProductImages=Array.isArray(p.images)&&p.images.length?p.images.slice(1):[];
+  renderImagePreview();
   $("edit-id").value=p.id;$("form-title").textContent="修改商品";$("submit-btn").textContent="儲存修改";$("cancel-edit").hidden=false;
   variantRows(p.variants||[{name:"一般規格",barcode:"",price:p.price??0,stock:null}]);const editTarget=$("form-title");const top=editTarget.getBoundingClientRect().top+window.pageYOffset-90;window.scrollTo({top:Math.max(0,top),behavior:"smooth"});setTimeout(()=>{$("name").focus({preventScroll:true});},450);
  }
