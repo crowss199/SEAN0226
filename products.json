@@ -14,7 +14,8 @@
         "name": "單個",
         "barcode": "4902778013328",
         "price": 160,
-        "stock": 34
+        "stock": 34,
+        "image": ""
       }
     ],
     "images": [
@@ -42,43 +43,50 @@
         "name": "白",
         "barcode": "4901480287072",
         "price": 45,
-        "stock": 0
+        "stock": 0,
+        "image": ""
       },
       {
         "name": "紅",
         "barcode": "4901480306421",
         "price": 45,
-        "stock": 0
+        "stock": 0,
+        "image": ""
       },
       {
         "name": "紫",
         "barcode": "4901480306445",
         "price": 45,
-        "stock": 0
+        "stock": 0,
+        "image": ""
       },
       {
         "name": "橘",
         "barcode": "4901480306438",
         "price": 45,
-        "stock": 0
+        "stock": 0,
+        "image": ""
       },
       {
         "name": "藍",
         "barcode": "4901480306414",
         "price": 45,
-        "stock": 0
+        "stock": 0,
+        "image": ""
       },
       {
         "name": "綠",
         "barcode": "4901480306452",
         "price": 45,
-        "stock": 0
+        "stock": 0,
+        "image": ""
       },
       {
         "name": "黑",
         "barcode": "4901480274010",
         "price": 45,
-        "stock": 0
+        "stock": 0,
+        "image": ""
       }
     ]
   }
