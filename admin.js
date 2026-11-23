@@ -1,8 +1,8 @@
 const $=id=>document.getElementById(id),MALL="#";let products=[];
 
 
-// 多張商品圖片：保留既有圖片，並可一次追加多張上傳圖片。
-let selectedProductImages=[];
+// Upload product image locally and embed it in products.json as a data URL.
+let selectedProductImage="";
 function readImageFile(file,maxBytes=1500000){
  return new Promise((resolve,reject)=>{
   if(!file||!file.type.startsWith("image/"))return reject(Error("請選擇圖片檔案。"));
@@ -13,31 +13,15 @@ function readImageFile(file,maxBytes=1500000){
   reader.readAsDataURL(file);
  });
 }
-function renderImagePreview(){
- const box=$("image-preview");
- const urls=[...new Set([String($("image").value||"").trim(),...selectedProductImages].filter(Boolean))];
- box.hidden=!urls.length;
- box.innerHTML=urls.map((url,i)=>`<div class="admin-image-thumb"><img alt="商品圖片${i+1}" src="${url}"><span>${i===0?"主圖":`圖片 ${i+1}`}</span><button type="button" data-remove-product-image="${i}" aria-label="移除圖片">×</button></div>`).join("");
-}
-$("image").addEventListener("change",renderImagePreview);
 $("image-file").addEventListener("change",async e=>{
- const files=[...e.target.files];if(!files.length)return;
+ const file=e.target.files[0];if(!file)return;
  try{
-  const loaded=await Promise.all(files.map(file=>readImageFile(file)));
-  selectedProductImages=[...selectedProductImages,...loaded];
-  renderImagePreview();
-  $("status").textContent=`已載入 ${loaded.length} 張商品圖片；提交商品後會一併放入 products.json。`;
+  selectedProductImage=await readImageFile(file);
+  $("image").value=selectedProductImage;
+  $("image-preview").hidden=false;
+  $("image-preview").innerHTML=`<img alt="商品圖片預覽" src="${selectedProductImage}">`;
+  $("status").textContent="商品圖片已載入，提交商品後會一併放入 products.json。";
  }catch(err){$("status").textContent=err.message}
- e.target.value="";
-});
-$("image-preview").addEventListener("click",e=>{
- const btn=e.target.closest("[data-remove-product-image]");if(!btn)return;
- const index=Number(btn.dataset.removeProductImage);
- const urls=[...new Set([String($("image").value||"").trim(),...selectedProductImages].filter(Boolean))];
- const removed=urls[index];
- if(removed===String($("image").value||"").trim())$("image").value="";
- selectedProductImages=selectedProductImages.filter(x=>x!==removed);
- renderImagePreview();
 });
 
 const AUTH_KEY="xiangAnAdminSession";
@@ -71,24 +55,36 @@ $("logout").addEventListener("click",logout);
 const fields=["name","brand","function-category","desc","image","url"];
 function normalizeProduct(p){
  const source=Array.isArray(p.variants)&&p.variants.length?p.variants:[{name:"一般規格",stock:p.stock===undefined?null:p.stock,price:p.price}];
- const imageList=Array.isArray(p.images)&&p.images.length?p.images.filter(Boolean):[p.image].filter(Boolean);
- return {...p,image:imageList[0]||p.image||"",images:imageList,variants:source.map((v,i)=>{
+ return {...p,variants:source.map((v,i)=>{
   const rawPrice=v.price===undefined||v.price===null||v.price===""?p.price:v.price;
   const price=Number(rawPrice);
   const rawStock=v.stock;
-  return {...v,name:String(v.name||("規格"+(i+1))),barcode:String(v.barcode||v.internationalBarcode||""),price:Number.isFinite(price)&&price>=0?price:0,stock:rawStock===null||rawStock===undefined||rawStock===""?null:Math.max(0,Number(rawStock)||0)};
+  return {...v,name:String(v.name||("規格"+(i+1))),barcode:String(v.barcode||v.internationalBarcode||""),image:String(v.image||""),price:Number.isFinite(price)&&price>=0?price:0,stock:rawStock===null||rawStock===undefined||rawStock===""?null:Math.max(0,Number(rawStock)||0)};
  })};
 }
 function readVariantRows(){
  return [...$("variant-rows").querySelectorAll(".variant-row")].map(r=>{
   const stockValue=r.querySelector(".variant-stock").value.trim();
   const priceValue=r.querySelector(".variant-price").value.trim();
-  return {name:r.querySelector(".variant-name").value.trim(),barcode:r.querySelector(".variant-barcode").value.trim(),price:priceValue===""?NaN:Number(priceValue),stock:stockValue===""?null:Math.max(0,Number(stockValue)||0)};
+  return {name:r.querySelector(".variant-name").value.trim(),barcode:r.querySelector(".variant-barcode").value.trim(),price:priceValue===""?NaN:Number(priceValue),stock:stockValue===""?null:Math.max(0,Number(stockValue)||0),image:r.querySelector(".variant-image-value").value||""};
  });
 }
-function variantRows(list=[{name:"一般規格",barcode:"",price:"",stock:0}]){
- $("variant-rows").innerHTML=list.map((v,i)=>`<div class="variant-row"><label>規格名稱<input class="variant-name" maxlength="60" required value="${esc(v.name)}" placeholder="例如：0.5mm 黑色"></label><label>國際條碼（選填）<input class="variant-barcode" inputmode="numeric" maxlength="32" value="${esc(v.barcode||"")}" placeholder="例如：4710000000000"></label><label>規格價格（元）<input class="variant-price" type="number" min="0" step="1" required value="${v.price===undefined||v.price===null?"":esc(v.price)}" placeholder="例如：45"></label><label>庫存數量<input class="variant-stock" type="number" min="0" step="1" value="${v.stock===null||v.stock===undefined?0:esc(v.stock)}" placeholder="例如：20"></label><button type="button" class="delete remove-variant" aria-label="刪除此規格" ${list.length===1?"disabled":""}>刪除</button></div>`).join("");
+function variantRows(list=[{name:"一般規格",barcode:"",price:"",stock:0,image:""}]){
+ $("variant-rows").innerHTML=list.map((v,i)=>`<div class="variant-row">
+ <label>規格名稱<input class="variant-name" maxlength="60" required value="${esc(v.name)}" placeholder="例如：0.5mm 黑色"></label>
+ <label>國際條碼（選填）<input class="variant-barcode" inputmode="numeric" maxlength="32" value="${esc(v.barcode||"")}" placeholder="例如：4710000000000"></label>
+ <label>規格價格（元）<input class="variant-price" type="number" min="0" step="1" required value="${v.price===undefined||v.price===null?"":esc(v.price)}" placeholder="例如：45"></label>
+ <label>庫存數量<input class="variant-stock" type="number" min="0" step="1" value="${v.stock===null||v.stock===undefined?0:esc(v.stock)}" placeholder="例如：20"></label>
+ <label class="variant-photo-field">規格照片<input class="variant-image-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><input class="variant-image-value" type="hidden" value="${esc(v.image||"")}"><span class="variant-photo-preview">${v.image?`<img src="${esc(v.image)}" alt="規格照片預覽">`:"尚未上傳照片"}</span></label>
+ <button type="button" class="delete remove-variant" aria-label="刪除此規格" ${list.length===1?"disabled":""}>刪除</button>
+ </div>`).join("");
 }
+$("variant-rows").addEventListener("change",async e=>{
+ const input=e.target.closest(".variant-image-file");if(!input)return;
+ const row=input.closest(".variant-row"),file=input.files?.[0];if(!file)return;
+ try{const data=await readImageFile(file,1500000);row.querySelector(".variant-image-value").value=data;row.querySelector(".variant-photo-preview").innerHTML=`<img src="${data}" alt="規格照片預覽">`;$("status").textContent="規格照片已載入；儲存商品後會放入 products.json。";}
+ catch(err){$("status").textContent=err.message}
+});
 $("add-variant").addEventListener("click",()=>{
  const list=readVariantRows();list.push({name:"",barcode:"",price:"",stock:0});variantRows(list);
 });
@@ -146,7 +142,7 @@ function render(){
  updateBulkDeleteUI();
 }
 function reset(){
- $("product-form").reset();selectedProductImages=[];$("image-preview").hidden=true;$("image-preview").innerHTML="";
+ $("product-form").reset();selectedProductImage="";$("image-preview").hidden=true;$("image-preview").innerHTML="";
  $("edit-id").value="";$("form-title").textContent="新增商品";$("submit-btn").textContent="＋ 加入商品清單";$("cancel-edit").hidden=true;
  variantRows([{name:"一般規格",barcode:"",price:"",stock:0}]);
 }
@@ -156,7 +152,7 @@ $("product-form").addEventListener("submit",e=>{
  const variants=readVariantRows();
  if(!variants.length||variants.some(v=>!v.name||!Number.isInteger(v.price)||v.price<0)){$("status").textContent="請填寫每個規格名稱及有效的價格（0 元以上整數）。";return}
  const existing=products.find(x=>Number(x.id)===id)||{};
- const p={...existing,id,brand:$("brand").value.trim(),functionCategory:$("function-category").value.trim(),name:$("name").value.trim(),price:variants[0].price,desc:$("desc").value.trim(),image:([String($("image").value||"").trim(),...selectedProductImages].filter(Boolean)[0]||""),images:[...new Set([String($("image").value||"").trim(),...selectedProductImages].filter(Boolean))],url:$("url").value.trim(),category:existing.category||"writing",variants};
+ const p={...existing,id,brand:$("brand").value.trim(),functionCategory:$("function-category").value.trim(),name:$("name").value.trim(),price:variants[0].price,desc:$("desc").value.trim(),image:$("image").value.trim(),url:$("url").value.trim(),category:existing.category||"writing",variants};
  if(!p.name){$("status").textContent="請填寫商品名稱。";return}
  let i=products.findIndex(x=>Number(x.id)===id);i>=0?products[i]=p:products.push(p);
  reset();render();saveProductDraft();$("status").textContent="商品已儲存。可繼續新增或修改其他商品，全部完成後再按「下載更新檔」一次下載 products.json。";
@@ -181,8 +177,6 @@ $("product-list").addEventListener("click",e=>{
  if(eb){
   let p=products.find(x=>Number(x.id)===Number(eb.dataset.edit));if(!p)return;
   fields.forEach(k=>{const value=p[k==="function-category"?"functionCategory":k];$(k).value=(k==="url"&&value==="#")?"":(value??"")});
-  selectedProductImages=Array.isArray(p.images)&&p.images.length?p.images.slice(1):[];
-  renderImagePreview();
   $("edit-id").value=p.id;$("form-title").textContent="修改商品";$("submit-btn").textContent="儲存修改";$("cancel-edit").hidden=false;
   variantRows(p.variants||[{name:"一般規格",barcode:"",price:p.price??0,stock:null}]);const editTarget=$("form-title");const top=editTarget.getBoundingClientRect().top+window.pageYOffset-90;window.scrollTo({top:Math.max(0,top),behavior:"smooth"});setTimeout(()=>{$("name").focus({preventScroll:true});},450);
  }
@@ -334,16 +328,35 @@ let parsedOrderRows=[],orderHeaders=[],orderMapping={};
 function getOrders(){try{return JSON.parse(localStorage.getItem(ORDER_KEY)||"[]")}catch{return []}}
 function saveOrders(list){localStorage.setItem(ORDER_KEY,JSON.stringify(list))}
 function loadOrders(){renderOrders()}
-function renderOrders(){let list=getOrders();$("order-count").textContent=`（${list.length} 筆）`;$("orders-body").innerHTML=list.length?list.slice().reverse().map(o=>`<tr><td>${esc(o.orderNo)}</td><td>${esc(o.buyer)}</td><td>${esc(o.item)}</td><td>${esc(o.qty)}</td><td>${esc(o.amount)}</td><td>${esc(o.date)}</td></tr>`).join(""):'<tr><td colspan="6">尚未匯入訂單。</td></tr>'}
+function orderPageUrl(o){return new URL("order-detail.html",location.href).href+"#"+encodeURIComponent(JSON.stringify(o))}
+function renderOrders(){let list=getOrders();$("order-count").textContent=`（${list.length} 筆）`;$("orders-body").innerHTML=list.length?list.slice().reverse().map(o=>`<tr><td>${esc(o.orderNo)}</td><td>${esc(o.buyer)}</td><td>${esc(o.item)}</td><td>${esc(o.qty)}</td><td>${esc(o.amount)}</td><td>${esc(o.date)}</td><td><a class="order-page-link" href="${esc(orderPageUrl(o))}" target="_blank" rel="noopener">開啟訂單頁 ↗</a></td></tr>`).join(""):'<tr><td colspan="7">尚未匯入訂單。</td></tr>'}
 function norm(s){return String(s??"").toLowerCase().replace(/[\s　_()（）【】\[\]：:.-]/g,"")}
 function autoMap(headers){let out={};for(const f of orderFields){let found=headers.find(h=>f.aliases.some(a=>norm(h)===norm(a)))||headers.find(h=>f.aliases.some(a=>norm(h).includes(norm(a))||norm(a).includes(norm(h))));out[f.key]=found||""}return out}
 function showMapping(){let grid=$("mapping-grid");grid.innerHTML=orderFields.map(f=>`<label>${f.label}<select data-map="${f.key}"><option value="">（不匯入）</option>${orderHeaders.map(h=>`<option value="${esc(h)}" ${orderMapping[f.key]===h?"selected":""}>${esc(h)}</option>`).join("")}</select></label>`).join("");grid.querySelectorAll("select").forEach(sel=>sel.addEventListener("change",()=>{orderMapping[sel.dataset.map]=sel.value;renderPreview()}));$("mapping-area").hidden=false;renderPreview()}
 function mappedRow(row){let o={};for(const f of orderFields)o[f.key]=orderMapping[f.key]?String(row[orderMapping[f.key]]??"").trim():"";o.qty=o.qty||"1";return o}
 function renderPreview(){let rows=parsedOrderRows.slice(0,5).map(mappedRow);$("order-preview").querySelector("thead").innerHTML=`<tr>${orderFields.map(f=>`<th>${f.label}</th>`).join("")}</tr>`;$("order-preview").querySelector("tbody").innerHTML=rows.map(o=>`<tr>${orderFields.map(f=>`<td>${esc(o[f.key])}</td>`).join("")}</tr>`).join("");let noMap= !orderMapping.orderNo;$("confirm-import").disabled=noMap;$("order-import-status").textContent=noMap?"請指定訂單編號欄位，才能匯入並避免重複訂單。":`共讀取 ${parsedOrderRows.length} 筆資料，預覽前 5 筆。`}
 $("order-file").addEventListener("change",async e=>{let file=e.target.files[0];if(!file)return;try{if(!window.XLSX)throw Error("Excel/CSV 讀取元件載入失敗，請重新整理頁面後再試。");let buf=await file.arrayBuffer(),wb=XLSX.read(buf,{type:"array",cellDates:true}),sheet=wb.Sheets[wb.SheetNames[0]],matrix=XLSX.utils.sheet_to_json(sheet,{header:1,defval:"",raw:false});if(!matrix.length)throw Error("檔案內沒有可讀取的訂單資料。");let headerAt=0,bestScore=-1;for(let i=0;i<Math.min(matrix.length,12);i++){let cells=matrix[i].map(v=>String(v??"").trim()).filter(Boolean),score=orderFields.filter(f=>cells.some(h=>f.aliases.some(a=>norm(h)===norm(a)||norm(h).includes(norm(a))))).length;if(score>bestScore){bestScore=score;headerAt=i}}orderHeaders=matrix[headerAt].map(v=>String(v??"").trim());if(!orderHeaders.some(Boolean))throw Error("找不到欄位標題列，請確認匯出檔案。");parsedOrderRows=matrix.slice(headerAt+1).filter(r=>r.some(v=>String(v??"").trim())).map(r=>Object.fromEntries(orderHeaders.map((h,i)=>[h,r[i]??""]).filter(([h])=>h)));if(!parsedOrderRows.length)throw Error("標題列下方沒有訂單資料。");orderMapping=autoMap(orderHeaders);showMapping()}catch(err){$("order-import-status").textContent=err.message||"讀取失敗，請確認檔案格式。";$("mapping-area").hidden=false}e.target.value=""});
-$("confirm-import").addEventListener("click",()=>{let old=getOrders(),known=new Set(old.map(o=>String(o.orderNo))),added=0,skipped=0;for(const row of parsedOrderRows){let o=mappedRow(row);if(!o.orderNo){skipped++;continue}if(known.has(o.orderNo)){skipped++;continue}known.add(o.orderNo);old.push({...o,importedAt:new Date().toISOString()});added++}saveOrders(old);renderOrders();$("order-import-status").textContent=`匯入完成：新增 ${added} 筆，略過 ${skipped} 筆（包含重複或缺少訂單編號）。`;$("mapping-area").hidden=true;parsedOrderRows=[];orderHeaders=[];});
+$("confirm-import").addEventListener("click",()=>{
+ let old=getOrders(),known=new Set(old.map(o=>String(o.orderNo))),groups=new Map(),skipped=0;
+ for(const row of parsedOrderRows){
+  const o=mappedRow(row);if(!o.orderNo){skipped++;continue}
+  if(!groups.has(o.orderNo))groups.set(o.orderNo,{...o,qty:0,amount:0,itemParts:[]});
+  const g=groups.get(o.orderNo);
+  if(o.item&&!g.itemParts.includes(o.item))g.itemParts.push(o.item);
+  const q=Number(String(o.qty).replace(/[^0-9.-]/g,""));if(Number.isFinite(q))g.qty+=q;
+  const amount=Number(String(o.amount).replace(/[^0-9.-]/g,""));if(Number.isFinite(amount))g.amount+=amount;
+  if(!g.buyer&&o.buyer)g.buyer=o.buyer;if(!g.date&&o.date)g.date=o.date;
+ }
+ let added=0;
+ for(const [orderNo,g] of groups){
+  if(known.has(String(orderNo))){skipped++;continue}
+  const {itemParts,...o}=g;o.item=itemParts.join("\\n");o.qty=String(g.qty||1);o.amount=String(g.amount||0);
+  old.push({...o,importedAt:new Date().toISOString()});known.add(String(orderNo));added++;
+ }
+ saveOrders(old);renderOrders();$("order-import-status").textContent=`匯入完成：新增 ${added} 筆訂單，略過 ${skipped} 筆（包含已存在訂單或缺少訂單編號）。同一訂單編號的多項商品已合併至同一訂單頁。`;$("mapping-area").hidden=true;parsedOrderRows=[];orderHeaders=[];
+});
 $("cancel-import").onclick=()=>{$("mapping-area").hidden=true;parsedOrderRows=[];orderHeaders=[]};
-$("export-orders").onclick=()=>{let rows=getOrders(),cols=orderFields.map(f=>f.label),csv=[cols,...rows.map(o=>orderFields.map(f=>o[f.key]??""))].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n"),blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="xiang-an-orders.csv";a.click();URL.revokeObjectURL(a.href)};
+$("export-orders").onclick=()=>{let rows=getOrders(),cols=[...orderFields.map(f=>f.label),"訂單明細網頁連結"],csv=[cols,...rows.map(o=>[...orderFields.map(f=>o[f.key]??""),orderPageUrl(o)])].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\\r\\n"),blob=new Blob(["\\ufeff"+csv],{type:"text/csv;charset=utf-8;"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="xiang-an-orders-with-links.csv";a.click();URL.revokeObjectURL(a.href)};
 $("clear-orders").onclick=()=>{if(confirm("確定清空這台裝置瀏覽器內的所有匯入訂單？此操作無法復原。")){saveOrders([]);renderOrders()}};
 
 // Website logo uploader; exported as site-settings.json.

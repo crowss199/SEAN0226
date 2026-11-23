@@ -2,7 +2,7 @@ const CART_KEY="xiangAnJapandiCart";
 let PRODUCTS=[],cart=[];const $=id=>document.getElementById(id),money=n=>"NT$ "+Number(n).toLocaleString("zh-TW");
 try{cart=JSON.parse(localStorage.getItem(CART_KEY)||"[]")}catch{cart=[]}
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const safeUrl=s=>{try{const value=String(s||"").trim();if(/^data:image\/(png|jpeg|webp|gif);base64,/i.test(value))return value;let u=new URL(value||"#",location.href);return ["http:","https:"].includes(u.protocol)?u.href:"#"}catch{return "#"}};
+const safeUrl=s=>{try{let u=new URL(s||"#",location.href);return ["http:","https:"].includes(u.protocol)?u.href:"#"}catch{return "#"}};
 
 // ===== 翔安富文具：即時讀取 Google 試算表庫存（只讀 API） =====
 let INVENTORY_SYNC_READY = false;
@@ -181,9 +181,7 @@ function renderProducts(){
   const stockUrl=String(p.url||"").trim(),stockHref=stockUrl?safeUrl(stockUrl):"#",stockLink=stockUrl&&stockHref!=="#"?`<a class="product-mall-link" href="${esc(stockHref)}" target="_blank" rel="noopener noreferrer">庫存查詢 ↗</a>`:"";
   const options=variants.map((v,i)=>{const st=getLiveStockState(v);return `<option value="${i}">${esc(v.name)}｜${money(variantPrice(p,v))}｜${esc(st.label)}</option>`}).join("");
   const buttonLabel=!firstState.known?"庫存待確認":(!firstState.available?"暫無庫存":"加入購物車 ＋");
-  const galleryImages=Array.isArray(p.images)&&p.images.length?p.images.filter(Boolean):[p.image].filter(Boolean);
-  const gallery=galleryImages.length?`<img src="${safeUrl(galleryImages[0])}" alt="${esc(p.name)}" loading="lazy" data-gallery-image>${galleryImages.length>1?`<button type="button" class="gallery-arrow gallery-prev" data-gallery-prev="${p.id}" aria-label="上一張圖片">‹</button><button type="button" class="gallery-arrow gallery-next" data-gallery-next="${p.id}" aria-label="下一張圖片">›</button><span class="gallery-count" data-gallery-count="${p.id}">1 / ${galleryImages.length}</span><div class="gallery-dots">${galleryImages.map((_,i)=>`<button type="button" class="gallery-dot ${i===0?"active":""}" data-gallery-dot="${p.id}" data-gallery-index="${i}" aria-label="第 ${i+1} 張圖片"></button>`).join("")}</div>`:""}`:`<span class="product-image-empty" aria-hidden="true"></span>`;
-  return `<article class="product-card"><div class="product-image" data-gallery="${p.id}" data-gallery-images="${esc(JSON.stringify(galleryImages))}" data-gallery-index="0">${gallery}</div><div class="product-details"><h3>${esc(p.name)}</h3><p>${esc(p.desc||"")}</p><span class="product-price" data-price-for="${p.id}">規格價格 ${money(variantPrice(p,first))}</span><label class="variant-select-label">選擇規格<select class="variant-select" data-variant-for="${p.id}">${options}</select></label><p class="live-stock-label ${!firstState.known?"is-unverified":""} ${firstState.known&&!firstState.available?"is-sold-out":""}" data-stock-for="${p.id}">${esc(firstState.label)}</p>${stockLink}</div><div class="product-actions"><label class="product-quantity-label">數量 <input class="product-quantity" type="number" min="1" ${firstState.known?`max="${firstState.stock}"`:""} step="1" value="1" data-quantity-for="${p.id}"></label><button class="add-button" data-add="${p.id}" ${!firstState.known||!firstState.available?"disabled":""}>${buttonLabel}</button></div></article>`;
+  return `<article class="product-card"><div class="product-image">${p.image?`<img src="${safeUrl(p.image)}" alt="${esc(p.name)}" loading="lazy">`:`<span class="product-image-empty" aria-hidden="true"></span>`}</div><div class="product-details"><h3>${esc(p.name)}</h3><p>${esc(p.desc||"")}</p><span class="product-price" data-price-for="${p.id}">規格價格 ${money(variantPrice(p,first))}</span><label class="variant-select-label">選擇規格<select class="variant-select" data-variant-for="${p.id}">${options}</select></label><p class="live-stock-label ${!firstState.known?"is-unverified":""} ${firstState.known&&!firstState.available?"is-sold-out":""}" data-stock-for="${p.id}">${esc(firstState.label)}</p>${stockLink}</div><div class="product-actions"><label class="product-quantity-label">數量 <input class="product-quantity" type="number" min="1" ${firstState.known?`max="${firstState.stock}"`:""} step="1" value="1" data-quantity-for="${p.id}"></label><button class="add-button" data-add="${p.id}" ${!firstState.known||!firstState.available?"disabled":""}>${buttonLabel}</button></div></article>`;
  }).join(""):'<p class="no-results">找不到符合的商品。</p>';
 }
 function persist(){localStorage.setItem(CART_KEY,JSON.stringify(cart));renderCart()}
@@ -299,34 +297,6 @@ loadSiteSettings();
 // 手機號碼查詢訂單（Apps Script JSONP）
 function lookupOrders(phone){const endpoint=window.CHECKOUT_CONFIG?.WEB_APP_URL||"";if(!endpoint){$("lookup-status").textContent="尚未設定訂單查詢網址。";return}const callback="orderLookup"+Date.now();window[callback]=data=>{delete window[callback];script.remove();if(!data.ok){$("lookup-status").textContent=data.error||"查詢失敗";return}const rows=data.orders||[];$("lookup-status").textContent=rows.length?`查到 ${rows.length} 筆訂單`:"查無此手機號碼的訂單。";$("lookup-results").innerHTML=rows.map(o=>`<article class="lookup-order"><strong>${esc(o.orderId)}</strong><span>${esc(o.createdAt)}</span><p>${esc(o.goods)}</p><p>門市店號：${esc(o.storeId)}｜商品金額：NT$ ${esc(o.productAmount)}｜運費：NT$ ${esc(o.shippingFee)}</p><b>狀態：${esc(o.status)}</b></article>`).join("")};const script=document.createElement("script");script.src=endpoint+"?phone="+encodeURIComponent(phone)+"&callback="+callback;script.onerror=()=>{$("lookup-status").textContent="查詢服務暫時無法連線，請稍後再試。";delete window[callback]};document.body.appendChild(script)}
 $("order-lookup-form").addEventListener("submit",e=>{e.preventDefault();const phone=$("lookup-phone").value.replace(/\D/g,"");$("lookup-results").innerHTML="";if(!/^\d{10}$/.test(phone)){$("lookup-status").textContent="請輸入正確的 10 碼手機號碼。";return}$("lookup-status").textContent="查詢中…";lookupOrders(phone)});
-
-// 多張商品圖片輪播：支援左右箭頭、圓點與觸控滑動。
-(function setupProductGallery(){
- const grid=document.getElementById("product-grid");if(!grid)return;
- function show(box,index){
-  let images=[];try{images=JSON.parse(box.dataset.galleryImages||"[]")}catch{}
-  if(!images.length)return;
-  index=(index+images.length)%images.length;
-  box.dataset.galleryIndex=String(index);
-  const img=box.querySelector("[data-gallery-image]");
-  if(img){img.src=safeUrl(images[index]);img.alt=`商品圖片 ${index+1}`;}
-  const count=box.querySelector("[data-gallery-count]");if(count)count.textContent=`${index+1} / ${images.length}`;
-  box.querySelectorAll("[data-gallery-dot]").forEach((dot,i)=>dot.classList.toggle("active",i===index));
- }
- grid.addEventListener("click",e=>{
-  const arrow=e.target.closest("[data-gallery-prev],[data-gallery-next]");
-  const dot=e.target.closest("[data-gallery-dot]");
-  if(arrow){const box=arrow.closest("[data-gallery]");show(box,Number(box.dataset.galleryIndex||0)+(arrow.hasAttribute("data-gallery-next")?1:-1));}
-  else if(dot){show(dot.closest("[data-gallery]"),Number(dot.dataset.galleryIndex||0));}
- });
- let touchX=0;
- grid.addEventListener("touchstart",e=>{const box=e.target.closest("[data-gallery]");if(box)touchX=e.touches[0].clientX;},{passive:true});
- grid.addEventListener("touchend",e=>{
-  const box=e.target.closest("[data-gallery]");if(!box||!touchX)return;
-  const dx=e.changedTouches[0].clientX-touchX;touchX=0;
-  if(Math.abs(dx)>35)show(box,Number(box.dataset.galleryIndex||0)+(dx<0?1:-1));
- },{passive:true});
-})();
 
 // V30：點擊商品圖片可放大檢視
 (function setupProductImageZoom(){

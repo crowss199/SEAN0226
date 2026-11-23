@@ -238,11 +238,3 @@ V15 修正舊版 `setup()` 新增欄位時可能覆蓋最後一個既有標題�
 ## V37 每小時庫存自動同步
 
 請參閱 `README_V37_每小時自動庫存同步.txt`。本版新增 Apps Script 每小時觸發器，透過安全儲存於 Script Properties 的 GitHub Token 更新 Repository 根目錄 `products.json`。首次必須設定 GITHUB_TOKEN、GITHUB_OWNER、GITHUB_REPO、GITHUB_BRANCH、GITHUB_FILE_PATH，並從試算表選單建立觸發器。
-
-
-## 多張商品圖片展示
-- 管理頁新增／修改商品時，可在「上傳多張商品圖片」一次選取多張照片。
-- 第一張圖片作為商品主圖；官網商品卡片會提供左右切換、圖片頁數及圓點提示，也支援手機觸控左右滑動。
-- 點擊目前顯示的圖片可放大檢視。
-- 修改既有商品時會保留原有圖片；可再追加圖片，或在圖片預覽區按「×」移除。
-- 完成後按「下載更新檔」取得 `products.json`，上傳 GitHub Repository 根目錄覆蓋舊檔並 Commit changes。
