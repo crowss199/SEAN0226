@@ -141,3 +141,12 @@ body.image-zoom-open{overflow:hidden}
 .live-stock-label.is-sold-out{color:#a14a3b!important}
 .live-stock-label.is-unverified{color:#9b6a28!important}
 .product-disclaimer{line-height:1.8}
+
+/* 手機版固定顯示快速服務入口，不收納在漢堡選單 */
+.mobile-quick-links{display:none}
+@media(max-width:700px){
+ .mobile-quick-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px 14px;background:var(--paper);border-bottom:1px solid var(--line);position:relative;z-index:7}
+ .mobile-quick-links a{min-height:46px;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 5px;border:1px solid var(--sage);border-radius:24px;color:var(--sage-dark);font-size:11px;font-weight:600;white-space:nowrap;background:var(--paper)}
+ .mobile-quick-links a span{font-size:15px;line-height:1}
+ .mobile-quick-links a:active{background:var(--cream)}
+}
