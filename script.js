@@ -127,12 +127,8 @@ async function loadProducts(){
   PRODUCTS=await r.json();
   try{
    const report=await refreshLiveInventory();
-   const note=document.querySelector(".product-disclaimer");
-   if(note)note.textContent=`庫存已連接 Google 試算表「文具資料」：成功同步 ${report.matched} 個規格；尚未建檔 ${report.missing} 個；重複條碼 ${report.duplicated} 個。未同步商品會暫停販售；每 60 秒及重新切回頁面時更新。`;
   }catch(err){
    INVENTORY_SYNC_READY=false;
-   const note=document.querySelector(".product-disclaimer");
-   if(note)note.textContent="目前無法讀取試算表即時庫存，為避免超賣，暫停加入選購清單。請重新整理或稍後再試。";
    console.error("即時庫存同步失敗",err);
   }
   populateProductFilters();
@@ -239,12 +235,8 @@ async function refreshWebsiteInventory(){
  inventoryRefreshBusy=true;
  try{
   const report=await refreshLiveInventory();
-  const note=document.querySelector(".product-disclaimer");
-  if(note)note.textContent=`庫存已連接 Google 試算表「文具資料」：成功同步 ${report.matched} 個規格；尚未建檔 ${report.missing} 個；重複條碼 ${report.duplicated} 個。未同步商品會暫停販售；每 60 秒及重新切回頁面時更新。`;
  }catch(err){
   INVENTORY_SYNC_READY=false;
-  const note=document.querySelector(".product-disclaimer");
-  if(note)note.textContent="目前無法取得試算表最新庫存，已暫停加入選購清單。請重新整理頁面後再試。";
   console.error("庫存重新同步失敗",err);
  }
  updateVisibleProductInventoryUI();
