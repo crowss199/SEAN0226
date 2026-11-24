@@ -53,3 +53,52 @@ body[data-theme] .add-button{background:var(--sage-dark)!important;color:#fff!im
 .product-quantity-label{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink);white-space:nowrap}
 .product-quantity{width:58px;min-height:36px;padding:5px;border:1px solid var(--accent-border,var(--line));border-radius:4px;background:#fff;color:#222;text-align:center;font-size:14px}
 .product-actions{gap:10px}
+
+/* V31：墨綠 × 古金色｜深色導覽與標題、淺色商品展示 */
+body[data-theme="forest"]{
+ --ink:#26352d;--muted:#747d73;--line:#e2e5dc;--paper:#fbfaf6;--cream:#eef0e8;
+ --sage:#9b895c;--sage-dark:#19372b;--clay:#b99a5b;--surface:#fff;--soft:#f4f5ef;--accent-border:#dce2d7
+}
+body[data-theme="forest"] .announcement{background:#142c22;color:#e7d7ad}
+body[data-theme="forest"] .site-header{background:#19372bF7;border-color:#385344;color:#f7f2e6}
+body[data-theme="forest"] .brand-mark{border-color:#b99a5b;color:#e1c98d;background:transparent}
+body[data-theme="forest"] .brand-copy strong{color:#f7f2e6}
+body[data-theme="forest"] .brand-copy small{color:#c7c0a9}
+body[data-theme="forest"] .desktop-nav{color:#eee7d7}
+body[data-theme="forest"] .desktop-nav a:hover{color:#d6bd7d}
+body[data-theme="forest"] .cart-trigger{color:#f7f2e6}
+body[data-theme="forest"] .cart-count{background:#b99a5b;color:#172d23}
+body[data-theme="forest"] .menu-toggle{color:#f7f2e6}
+body[data-theme="forest"] .hero,body[data-theme="forest"] .notice-board-section{background:#f0f1e9;color:#26352d}
+body[data-theme="forest"] .eyebrow{color:#9a7e43}
+body[data-theme="forest"] .eyebrow i{background:#b99a5b}
+body[data-theme="forest"] .section-heading h2,body[data-theme="forest"] .notice-board h1,
+body[data-theme="forest"] .order-lookup-section h2,body[data-theme="forest"] .story-section h2{color:#19372b}
+body[data-theme="forest"] .section-heading h2 span{color:#7c8378}
+body[data-theme="forest"] .product-grid{background:#fbfaf6}
+body[data-theme="forest"] .product-card,body[data-theme="forest"] .product-item{background:#fff}
+body[data-theme="forest"] .product-image{background:#f4f5ef}
+body[data-theme="forest"] .product-details{background:#fff}
+body[data-theme="forest"] .product-price{color:#806b3e}
+body[data-theme="forest"] .add-button,body[data-theme="forest"] .button-dark,
+body[data-theme="forest"] .header-shop-link,body[data-theme="forest"] .checkout-open,
+body[data-theme="forest"] .checkout-submit{background:#19372b;color:#fff}
+body[data-theme="forest"] .site-footer{background:#19372b;color:#f2eddf;border-color:#385344}
+body[data-theme="forest"] .site-footer .brand-copy strong{color:#f7f2e6}
+body[data-theme="forest"] .site-footer .brand-copy small,body[data-theme="forest"] .site-footer p{color:#c7c0a9}
+body[data-theme="forest"] .messenger-float{background:#19372b;border:1px solid #b99a5b;color:#f7f2e6}
+body[data-theme="forest"] .mobile-quick-links{background:#19372b;border-color:#385344}
+body[data-theme="forest"] .mobile-quick-links a{background:#19372b;color:#f2e6c6;border-color:#b99a5b}
+body[data-theme="forest"] .mobile-quick-links a:active{background:#294b3a}
+body[data-theme="forest"] .notice-board{background:#fff;border-color:#dce2d7}
+body[data-theme="forest"] .notice-board:before{background:#b99a5b}
+body[data-theme="forest"] .notice-board-heading{color:#806b3e}
+body[data-theme="forest"] .order-lookup-section{background:#fbfaf6}
+body[data-theme="forest"] .order-lookup-form button{background:#19372b;color:#fff}
+body[data-theme="forest"] .cart-drawer{background:#fbfaf6;color:#26352d}
+body[data-theme="forest"] .checkout-page{background:#f4f5ef;color:#26352d}
+@media(max-width:700px){
+ body[data-theme="forest"] .site-header{height:72px}
+ body[data-theme="forest"] .mobile-quick-links{padding:11px 12px}
+ body[data-theme="forest"] .mobile-quick-links a{font-size:10px;min-height:44px}
+}
