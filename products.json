@@ -7,14 +7,70 @@
     "desc": "",
     "image": "https://images.plurk.com/6xvT6sugeGtrI1N3wJoTbw.jpg",
     "url": "",
-    "price": 160,
+    "price": 180,
     "category": "writing",
     "variants": [
       {
         "name": "單個",
         "barcode": "4902778013328",
-        "price": 160,
-        "stock": 34
+        "price": 180,
+        "stock": 34,
+        "image": ""
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "KOKUYO 橡皮擦 RESARE系列",
+    "brand": "KOKUYO",
+    "functionCategory": "橡皮擦",
+    "desc": "",
+    "image": "",
+    "url": "",
+    "price": 40,
+    "category": "writing",
+    "variants": [
+      {
+        "name": "白",
+        "barcode": "4901480287072",
+        "price": 40,
+        "stock": 0
+      },
+      {
+        "name": "紅",
+        "barcode": "4901480306421",
+        "price": 40,
+        "stock": 0
+      },
+      {
+        "name": "紫",
+        "barcode": "4901480306445",
+        "price": 40,
+        "stock": 0
+      },
+      {
+        "name": "黑",
+        "barcode": "4901480274010",
+        "price": 40,
+        "stock": 0
+      },
+      {
+        "name": "綠",
+        "barcode": "4901480306452",
+        "price": 40,
+        "stock": 0
+      },
+      {
+        "name": "橙",
+        "barcode": "4901480306438",
+        "price": 40,
+        "stock": 0
+      },
+      {
+        "name": "藍",
+        "barcode": "4901480306414",
+        "price": 40,
+        "stock": 0
       }
     ]
   }
