@@ -189,40 +189,32 @@ $("lookup").onclick=async()=>{
  const no=$("taxid").value.replace(/\D/g,"");
  if(!/^\d{8}$/.test(no)){alert("請輸入 8 位數統一編號");return;}
  $("lookup").disabled=true;$("lookup").textContent="查詢中";
- let lastError="";
+ let lastError="", name="";
  try{
-  // Official Ministry of Economic Affairs company-name lookup API.
-  const api=`https://data.gcis.nat.gov.tw/od/data/api/9D17AE0D-09B5-4732-A8F4-81ADED04B679`;
-  const params=new URLSearchParams({
-   "$format":"json",
-   "$filter":`Business_Accounting_NO eq ${no}`,
-   "$skip":"0",
-   "$top":"10"
-  });
-  let res=await fetch(`${api}?${params.toString()}`,{headers:{Accept:"application/json"}});
-  if(!res.ok)throw new Error(`經濟部 API HTTP ${res.status}`);
-  let data=await res.json();
-  let list=Array.isArray(data)?data:(data?.data||data?.results||[]);
-  let found=list.find(x=>String(x.Business_Accounting_NO||x.No||"")===no)||list[0];
-  let name=found?.Company_Name||found?.company_name||found?.name||"";
-  if(name){
-   $("buyer").value=name;render();alert("已帶入公司名稱："+name);return;
+  const api="https://data.gcis.nat.gov.tw/od/data/api/9D17AE0D-09B5-4732-A8F4-81ADED04B679";
+  const params=new URLSearchParams({"$format":"json","$filter":`Business_Accounting_NO eq ${no}`,"$skip":"0","$top":"10"});
+  try{
+   const res=await fetch(`${api}?${params.toString()}`,{headers:{Accept:"application/json"}});
+   if(!res.ok)throw new Error(`經濟部 API HTTP ${res.status}`);
+   const data=await res.json();
+   const list=Array.isArray(data)?data:(data?.data||data?.results||[]);
+   const found=list.find(x=>String(x.Business_Accounting_NO||x.No||"")===no)||list[0];
+   name=found?.Company_Name||found?.company_name||found?.name||"";
+   if(!name)lastError="經濟部 API 未回傳公司名稱";
+  }catch(e){lastError=e?.message||"經濟部 API 查詢失敗";}
+  if(!name){
+   try{
+    const res=await fetch(`https://company.g0v.ronny.tw/api/show/${no}`,{headers:{Accept:"application/json"}});
+    if(!res.ok)throw new Error(`備援查詢 HTTP ${res.status}`);
+    const data=await res.json();
+    name=data?.name||data?.公司名稱||data?.Company_Name||data?.company_name||"";
+    if(!name)lastError+="；備援資料未找到名稱";
+   }catch(e){lastError+="；備援查詢失敗（可能是瀏覽器跨來源限制）";}
   }
-  lastError="經濟部 API 未回傳公司名稱";
- }catch(e){lastError=e?.message||"經濟部 API 查詢失敗";}
- // Fallback public company lookup. If browser CORS blocks this too, keep manual input available.
- try{
-  const res=await fetch(`https://company.g0v.ronny.tw/api/show/${no}`,{headers:{Accept:"application/json"}});
-  if(!res.ok)throw new Error(`備援查詢 HTTP ${res.status}`);
-  const data=await res.json();
-  const name=data?.name||data?.公司名稱||data?.Company_Name||data?.company_name||"";
-  if(name){$("buyer").value=name;render();alert("已帶入公司名稱："+name);return;}
-  lastError+="；備援資料未找到名稱";
- }catch(e){lastError+="；備援查詢失敗（可能是瀏覽器跨來源限制）";}
- alert("統編查詢未成功。\n原因："+lastError+"\n請確認統編，或手動輸入買受人名稱。若從電腦直接開啟 HTML，請改用 HTTPS 網址開啟；政府 API 可能限制本機 file:// 網頁查詢。");
-}finally{
- $("lookup").disabled=false;$("lookup").textContent="查詢公司";
-}
+  if(name){$("buyer").value=name;render();alert("已帶入公司名稱："+name);}
+  else alert("統編查詢未成功。\n原因："+lastError+"\n請確認統編或手動輸入買受人名稱。");
+ }catch(e){alert("查詢發生錯誤："+(e?.message||e));}
+ finally{$("lookup").disabled=false;$("lookup").textContent="查詢公司";}
 };
 const now=new Date();$("date").value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
 makeEditor();render();
