@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>免用統一發票收據開立程式</title>
+<style>
+:root{--ink:#111;--line:#18202a;--paper:#eaf1ff;--head:#596574;--blue:#2458ff}
+*{box-sizing:border-box}body{margin:0;background:#f2f4f7;color:#111;font-family:"Noto Sans TC","Microsoft JhengHei",Arial,sans-serif}
+.app{max-width:1550px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px}
+.panel{background:#fff;border:1px solid #d7dce3;border-radius:12px;padding:18px;box-shadow:0 4px 18px #0000000a;height:max-content}
+h1{font-size:20px;margin:0 0 14px}h2{font-size:15px;margin:18px 0 10px;border-bottom:1px solid #e4e7eb;padding-bottom:8px}
+label{display:block;font-size:13px;color:#444;margin:10px 0 5px}
+input,button{font:inherit}input{width:100%;border:1px solid #cbd0d8;border-radius:6px;padding:9px;background:#fff}
+.row{display:flex;gap:8px}.row input{min-width:0}.row button{white-space:nowrap}
+button{border:1px solid #111;background:#111;color:#fff;border-radius:6px;padding:9px 12px;cursor:pointer}
+button.secondary{background:#fff;color:#111}button.small{padding:6px 9px;font-size:12px}
+.help{font-size:12px;color:#68707c;line-height:1.5;margin:8px 0}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.items-editor{display:grid;gap:8px}.item-editor{border:1px solid #e2e5e9;padding:10px;border-radius:8px}
+.item-editor .fields{display:grid;grid-template-columns:1fr 70px 90px;gap:7px}
+.item-editor label{margin-top:0}.item-editor input{padding:7px}
+.preview-wrap{overflow:auto;background:#d9dee7;padding:12px;border-radius:10px}
+.receipt{width:1007px;min-width:1007px;max-width:1007px;margin:0 auto;background:#fff;border:1px solid #18202a;font-size:18px}
+.receipt-head{display:grid;grid-template-columns:1.3fr 2.6fr;border-bottom:1px solid var(--blue)}
+.receipt-title{font-size:27px;white-space:nowrap;text-align:center;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--blue);padding:10px}
+.head-right{padding:8px 12px;font-size:18px}
+.idline{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.digits{display:inline-flex}.digits span{border:1px solid #222;min-width:32px;text-align:center;padding:3px 7px;font-weight:bold;background:#e4edff}
+.date{margin-top:6px;letter-spacing:1px;font-weight:600}
+.buyer{padding:6px 12px;font-size:22px;border-bottom:1px solid var(--blue);min-height:48px}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{background:#666;color:#fff;font-size:21px;letter-spacing:4px;padding:4px 6px;border:1px solid #18202a;height:40px}
+td{border:1px solid #18202a;padding:6px;height:44px;vertical-align:middle}
+td:nth-child(1){width:38.4%}td:nth-child(2),td:nth-child(3),td:nth-child(4){text-align:center;font-weight:600}
+th:nth-child(1){width:38.4%}th:nth-child(2){width:9.3%}th:nth-child(3){width:9.3%}th:nth-child(4){width:9.3%}th:nth-child(5){width:33.7%}
+.note-cell{text-align:center;font-size:25px;vertical-align:top;padding:8px 6px 6px;white-space:nowrap;border-left:1px solid #18202a;border-right:1px solid #18202a}
+.totalrow td{height:44px;font-size:22px}
+.totalwords{letter-spacing:2px;white-space:normal}
+.bottom{display:grid;grid-template-columns:2fr 1fr;border-top:1px solid #18202a;min-height:48px}
+.amount-words{padding:8px;font-size:21px;letter-spacing:1px;border-right:1px solid #18202a;white-space:nowrap}
+.amount-words strong{font-weight:700}
+.payment{display:flex;align-items:center;justify-content:center;font-size:25px}
+.receipt-footer{text-align:center;font-size:11px;padding:4px;color:#566}
+@media(max-width:850px){.app{grid-template-columns:1fr}.panel{order:0}.preview-wrap{order:1}}
+@media print{
+ @page{size:A4 landscape;margin:12mm}
+ body{background:#fff}.app{display:block;margin:0;padding:0;max-width:none}
+ .panel,.no-print{display:none!important}.preview-wrap{padding:0;background:#fff;overflow:visible}
+ .receipt{min-width:0;max-width:none;width:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<section class="panel">
+<h1>收據開立</h1>
+<p class="help">輸入買受人統編後按「查詢公司」，可帶入政府公開資料中的公司名稱。若查不到，可直接手動輸入。</p>
+<label>統一編號</label>
+<div class="row"><input id="taxid" inputmode="numeric" maxlength="8" placeholder="8 位數統編"><button id="lookup">查詢公司</button></div>
+<label>買受人／公司名稱</label><input id="buyer" placeholder="輸入公司或買受人名稱">
+<label>收據日期</label><input id="date" type="date">
+<h2>商品明細</h2>
+<div id="items" class="items-editor"></div>
+<button class="secondary" id="add">＋ 新增商品</button>
+<label>備註</label><input id="note" value="收據專用章">
+<label>收款方式</label><input id="paymentInput" value="銀貨兩訖">
+<div class="actions">
+<button id="print">列印／另存 PDF</button>
+<button class="secondary" id="reset">清空明細</button>
+</div>
+<p class="help">金額以新台幣整數計算，收據國字會自動轉換。公司名稱查詢使用經濟部商工資料公開 API，需連網；部分瀏覽器或 API 服務限制可能導致查詢失敗，可手動填寫。</p>
+</section>
+<section class="preview-wrap">
+<div class="receipt" id="receipt">
+<div class="receipt-head">
+<div class="receipt-title">免用統一發票收據</div>
+<div class="head-right">
+<div class="idline">統一編號 <span class="digits" id="digits"><span>＿</span><span>＿</span><span>＿</span><span>＿</span><span>＿</span><span>＿</span><span>＿</span><span>＿</span></span></div>
+<div class="date" id="rocDate">中華民國　　年　　月　　日</div>
+</div></div>
+<div class="buyer" id="buyerPreview">買受人　</div>
+<table>
+<thead><tr><th>品　名</th><th>數量</th><th>單價</th><th>總價</th><th>備　註</th></tr></thead>
+<tbody id="receiptRows"></tbody>
+</table>
+<div class="bottom">
+<div class="amount-words">合計新台幣　<strong id="words">＊萬　＊仟　＊佰　＊拾　零元整</strong></div>
+<div class="payment" id="paymentPreview">銀貨兩訖</div>
+</div>
+<div class="receipt-footer">由經濟部商工資料公開 API 查詢公司名稱；請核對資料及收據內容後列印。</div>
+</div>
+</section>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const nf=n=>Math.round(Number(n)||0).toLocaleString("zh-TW");
+let products=[{name:"",qty:1,price:0},{name:"",qty:1,price:0}];
+function makeEditor(){
+ $("items").innerHTML="";
+ products.forEach((p,i)=>{
+  const box=document.createElement("div");box.className="item-editor";
+  box.innerHTML=`<div class="fields">
+   <div><label>品名</label><input data-i="${i}" data-k="name" value="${escapeHtml(p.name)}" placeholder="商品名稱"></div>
+   <div><label>數量</label><input data-i="${i}" data-k="qty" type="number" min="0" step="1" value="${p.qty}"></div>
+   <div><label>單價</label><input data-i="${i}" data-k="price" type="number" min="0" step="1" value="${p.price}"></div>
+  </div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><small>小計：${nf(p.qty*p.price)} 元</small><button class="secondary small" data-remove="${i}">刪除</button></div>`;
+  $("items").appendChild(box);
+ });
+ $("items").querySelectorAll("input").forEach(inp=>inp.addEventListener("input",e=>{
+  const i=+e.target.dataset.i,k=e.target.dataset.k;
+  products[i][k]=k==="name"?e.target.value:Math.max(0,Number(e.target.value)||0);
+  render();
+  const pos=e.target.selectionStart;
+  makeEditor();
+  const next=$("items").querySelector(`input[data-i="${i}"][data-k="${k}"]`);
+  if(next){next.focus(); if(k==="name"&&pos!==null)next.setSelectionRange(pos,pos);}
+ }));
+ $("items").querySelectorAll("[data-remove]").forEach(b=>b.addEventListener("click",()=>{products.splice(+b.dataset.remove,1);if(!products.length)products.push({name:"",qty:1,price:0});makeEditor();render()}));
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+const digits="零壹貳參肆伍陸柒捌玖",units=["","拾","佰","仟"];
+function groupChinese(n){
+ let s="",zero=false;
+ for(let i=3;i>=0;i--){let d=Math.floor(n/10**i)%10;
+  if(d===0){if(s&&n%10**i!==0)zero=true;}
+  else{if(zero){s+="零";zero=false;}s+=digits[d]+units[i];}
+ }
+ return s;
+}
+function integerChinese(num){
+ num=Math.floor(Math.abs(num));if(num===0)return "零";
+ const groups=["","萬","億","兆"];let parts=[],idx=0,needZero=false;
+ while(num>0&&idx<groups.length){let g=num%10000;
+  if(g){let t=groupChinese(g)+groups[idx];if(needZero&&g<1000)parts.push("零");parts.push(t);needZero=false;}
+  else if(parts.length)needZero=true;
+  num=Math.floor(num/10000);idx++;
+ }
+ return parts.reverse().join("").replace(/零+/g,"零").replace(/零(萬|億|兆)/g,"$1").replace(/零$/,"");
+}
+function moneyChinese(n){n=Math.round(Number(n)||0);return (n<0?"負":"")+integerChinese(n)+"元整";}
+function receiptAmountWords(amount){
+ amount=Math.max(0,Math.round(Number(amount)||0));
+ const d=String(amount).padStart(5,"0").slice(-5).split("").map(Number);
+ const digit=["零","壹","貳","參","肆","伍","陸","柒","捌","玖"];
+ const places=["萬","仟","佰","拾"];
+ const cells=d.slice(0,4).map((v,i)=>(v===0?"＊":digit[v])+places[i]);
+ const ones=d[4]===0?"零":digit[d[4]];
+ return cells.join("　")+"　"+ones+"元整";
+}
+function total(){return products.reduce((s,p)=>s+(Number(p.qty)||0)*(Number(p.price)||0),0);}
+function dateText(v){
+ const d=v?new Date(v+"T00:00:00"):new Date();
+ const y=d.getFullYear()-1911,m=d.getMonth()+1,day=d.getDate();
+ return `中華民國　${y} 年　${m} 月　${day} 日`;
+}
+function render(){
+ const id=$("taxid").value.replace(/\D/g,"").slice(0,8);
+ $("digits").innerHTML=Array.from({length:8},(_,i)=>`<span>${id[i]||"＿"}</span>`).join("");
+ $("rocDate").textContent=dateText($("date").value);
+ $("buyerPreview").textContent="買受人　"+$("buyer").value;
+ $("paymentPreview").textContent=$("paymentInput").value||"";
+ $("words").textContent=receiptAmountWords(total());
+
+ const rows=$("receiptRows");rows.innerHTML="";
+ const maxRows=Math.max(8,products.length);
+ for(let i=0;i<maxRows;i++){
+  const p=products[i],tr=document.createElement("tr");
+  if(p){
+   tr.innerHTML=`<td>${escapeHtml(p.name||"")}</td><td>${nf(p.qty)}</td><td>${nf(p.price)}</td><td>${nf(p.qty*p.price)}</td>`;
+  }else tr.innerHTML="<td></td><td></td><td></td><td></td>";
+  if(i===0){
+   const note=document.createElement("td");
+   note.className="note-cell";
+   note.rowSpan=maxRows;
+   note.textContent=$("note").value||"";
+   tr.appendChild(note);
+  }
+  rows.appendChild(tr);
+ }
+ const tr=document.createElement("tr");tr.className="totalrow";
+ tr.innerHTML=`<td colspan="3">合　計</td><td>${nf(total())}</td>`;rows.appendChild(tr);
+}
+$("add").onclick=()=>{products.push({name:"",qty:1,price:0});makeEditor();render()};
+["taxid","buyer","date","note","paymentInput"].forEach(id=>$(id).addEventListener("input",render));
+$("print").onclick=()=>window.print();
+$("reset").onclick=()=>{products=[{name:"",qty:1,price:0},{name:"",qty:1,price:0}];makeEditor();render()};
+$("lookup").onclick=async()=>{
+ const no=$("taxid").value.replace(/\D/g,"");
+ if(!/^\d{8}$/.test(no)){alert("請輸入 8 位數統一編號");return;}
+ $("lookup").disabled=true;$("lookup").textContent="查詢中";
+ let lastError="";
+ try{
+  // Official Ministry of Economic Affairs company-name lookup API.
+  const api=`https://data.gcis.nat.gov.tw/od/data/api/9D17AE0D-09B5-4732-A8F4-81ADED04B679`;
+  const params=new URLSearchParams({
+   "$format":"json",
+   "$filter":`Business_Accounting_NO eq ${no}`,
+   "$skip":"0",
+   "$top":"10"
+  });
+  let res=await fetch(`${api}?${params.toString()}`,{headers:{Accept:"application/json"}});
+  if(!res.ok)throw new Error(`經濟部 API HTTP ${res.status}`);
+  let data=await res.json();
+  let list=Array.isArray(data)?data:(data?.data||data?.results||[]);
+  let found=list.find(x=>String(x.Business_Accounting_NO||x.No||"")===no)||list[0];
+  let name=found?.Company_Name||found?.company_name||found?.name||"";
+  if(name){
+   $("buyer").value=name;render();alert("已帶入公司名稱："+name);return;
+  }
+  lastError="經濟部 API 未回傳公司名稱";
+ }catch(e){lastError=e?.message||"經濟部 API 查詢失敗";}
+ // Fallback public company lookup. If browser CORS blocks this too, keep manual input available.
+ try{
+  const res=await fetch(`https://company.g0v.ronny.tw/api/show/${no}`,{headers:{Accept:"application/json"}});
+  if(!res.ok)throw new Error(`備援查詢 HTTP ${res.status}`);
+  const data=await res.json();
+  const name=data?.name||data?.公司名稱||data?.Company_Name||data?.company_name||"";
+  if(name){$("buyer").value=name;render();alert("已帶入公司名稱："+name);return;}
+  lastError+="；備援資料未找到名稱";
+ }catch(e){lastError+="；備援查詢失敗（可能是瀏覽器跨來源限制）";}
+ alert("統編查詢未成功。\n原因："+lastError+"\n請確認統編，或手動輸入買受人名稱。若從電腦直接開啟 HTML，請改用 HTTPS 網址開啟；政府 API 可能限制本機 file:// 網頁查詢。");
+}finally{
+ $("lookup").disabled=false;$("lookup").textContent="查詢公司";
+}
+};
+const now=new Date();$("date").value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+makeEditor();render();
+</script>
+</body></html>
